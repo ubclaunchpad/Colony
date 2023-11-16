@@ -9,9 +9,10 @@ const LP_GH_APP_ID = "Iv1.bfff0a578d157ec8";
 // This assigns the values of your environment variables to local variables.
 const appId = process.env.GH_APP_ID;
 // const webhookSecret = process.env.WEBHOOK_SECRET;
-const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
+// const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // This reads the contents of your private key file.
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+// const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+const privateKey = process.env.G_Key;
 
 // This creates a new instance of the Octokit App class.
 const app = new App({
