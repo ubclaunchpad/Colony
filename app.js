@@ -1,60 +1,145 @@
-import 'dotenv/config';
-import express from 'express';
-import {
-  InteractionType,
-  InteractionResponseType,
-  InteractionResponseFlags,
-  MessageComponentTypes,
-  ButtonStyleTypes,
-} from 'discord-interactions';
-import { VerifyDiscordRequest, getRandomEmoji, DiscordRequest } from './utils.js';
-import { getShuffledOptions, getResult } from './game.js';
+// Require the necessary discord.js classes
+import { Client, Collection, Events, GatewayIntentBits, Guild } from 'discord.js';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { ALL_RESPONSES, createResponse } from './util/responses.js';
+import { userGithubMap } from './model/record.js';
+import { isRepoMember } from './util/github.js';
+dotenv.config();
+const __dirname = new URL('.', import.meta.url).pathname;
+const TOKEN = process.env.DISCORD_TOKEN;
+// Create a new client instance
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers] });
 
-// Create an express app
-const app = express();
-// Get port, or default to 3000
-const PORT = process.env.PORT || 3000;
-// Parse request body and verifies incoming requests using discord-interactions package
-app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
+client.commands = new Collection();
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Store for in-progress games. In production, you'd want to use a DB
-const activeGames = {};
+for (const file of commandFiles) {
+	const filePath = path.join(commandsPath, file);
+	const command = await import(filePath);
+	// Set a new item in the Collection with the key as the command name and the value as the exported module
+	if ('data' in command && 'execute' in command) {
+		client.commands.set(command.data.name, command);
+	} else {
+		console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+	}
+}
 
-/**
- * Interactions endpoint URL where Discord will send HTTP requests
- */
-app.post('/interactions', async function (req, res) {
-  // Interaction type and data
-  const { type, id, data } = req.body;
 
-  /**
-   * Handle verification requests
-   */
-  if (type === InteractionType.PING) {
-    return res.send({ type: InteractionResponseType.PONG });
-  }
-
-  /**
-   * Handle slash command requests
-   * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
-   */
-  if (type === InteractionType.APPLICATION_COMMAND) {
-    const { name } = data;
-
-    // "test" command
-    if (name === 'test') {
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          // Fetches a random emoji to send from a helper function
-          content: 'hello world ' + getRandomEmoji(),
-        },
-      });
-    }
-  }
+// When the client is ready, run this code (only once)
+// We use 'c' for the event parameter to keep it separate from the already defined 'client'
+client.once(Events.ClientReady, c => {
+	console.log(`Ready! Logged in as ${c.user.tag}`);
 });
 
-app.listen(PORT, () => {
-  console.log('Listening on port', PORT);
+client.on(Events.InteractionCreate, async interaction => {
+	console.log('Interaction received');
+	// console.log(interaction);
+
+	if (interaction.isButton()) {
+		if (interaction.customId.startsWith('verify_button_')) {
+			// console.log(userGithubMap)
+			const githubResponse = userGithubMap[interaction.user.id];
+			if (!githubResponse) {
+				await interaction.update({
+					content: createResponse(ALL_RESPONSES.connectionIssue, [interaction.user.username]),
+					components: []
+				});
+				return;
+			}
+
+			let client_id = "Iv1.bfff0a578d157ec8";
+      		let device_code = userGithubMap[interaction.user.id].device_code;
+      		let grant_type = 'urn:ietf:params:oauth:grant-type:device_code';
+     		 let resp = await fetch(`https://github.com/login/oauth/access_token?client_id=${client_id}&device_code=${device_code}&grant_type=${grant_type}`, {
+        		method: 'POST',
+        		headers: {
+          		'X-GitHub-Api-Version': '2022-11-28',
+          		'Accept': 'application/json'
+        		}
+    		});
+
+
+      		let data = await resp.json();
+			
+      		let access_token = data.access_token;
+
+			  if (!access_token) {
+				await interaction.update({
+					content: createResponse(ALL_RESPONSES.connectionIssue, [interaction.user.id]),
+					components: []
+				});
+				return;
+			}
+			
+
+			  let resp2 = await fetch(`https://api.github.com/user`, {
+				method: 'GET',
+				headers: {
+				  'Authorization': `token ${access_token}`,
+				  'Accept': 'application/json'
+				}
+			  });
+			  let data2 = await resp2.json();
+			//   console.log(data2);
+		
+			  let st = await isRepoMember(data2.login);
+			//   console.log(st);
+			if (st) {
+				await interaction.update({
+					content: createResponse(ALL_RESPONSES.checkMeSuccess, [interaction.user.id]),
+					components: []
+				});
+			} else {
+				await interaction.update({
+					content: createResponse(ALL_RESPONSES.checkMeNotMember, []),
+					components: []
+				});
+			}
+		}
+	} else if (interaction.isCommand()) {
+
+	const command = interaction.client.commands.get(interaction.commandName);
+
+	if (!command) {
+		console.error(`No command matching ${interaction.commandName} was found.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+		} else {
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}
+}
 });
+
+client.on(Events.MessageCreate, message => {
+	console.log('Message received');
+	if (!message.content.startsWith('!') || message.author.bot) return;
+	// console.log(message);
+});
+
+client.on(Events.GuildMemberAdd, async member => {
+
+	try {
+		await client.users.send(member.user.id, {
+			content: createResponse(ALL_RESPONSES.welcomeMessage, [member.user.id])
+		});
+	
+	} catch (error) {
+		console.log('Failed to send DM:', error);
+	}
+});
+
+
+
+// Log in to Discord with your client's token
+client.login(TOKEN);
