@@ -12,7 +12,7 @@ const appId = process.env.GH_APP_ID;
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // This reads the contents of your private key file.
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-const privateKey = process.env.G_Key;
+const privateKey = process.env.GH_KEY;
 
 // This creates a new instance of the Octokit App class.
 const app = new App({

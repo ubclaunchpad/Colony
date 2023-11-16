@@ -5,8 +5,10 @@ dotenv.config();
 
 // const webhookSecret = process.env.WEBHOOK_SECRET;
 const appId = process.env.GH_APP_ID;
-const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+// const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
+// const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+const privateKey = process.env.GH_KEY;
+
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
