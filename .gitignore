@@ -3,3 +3,4 @@ node_modules
 gkey.pem
 examples
 .DS_Store
+build

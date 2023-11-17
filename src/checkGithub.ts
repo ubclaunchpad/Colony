@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import {App} from "octokit";
+import { App } from "octokit";
 import fs from "fs";
 dotenv.config();
 
@@ -20,48 +20,48 @@ const app = new App({
   privateKey: privateKey,
 });
 
-const okto =  await app.getInstallationOctokit(LP_REPO_ID);
+const okto = await app.getInstallationOctokit(LP_REPO_ID);
 const RESPONSES = {
-    member: '',
-    notMember: '',
-    error: '',
-}
+  member: "",
+  notMember: "",
+  error: "",
+};
 
 export async function isRepoMember(githubUsername) {
   console.log(`Checking if member for: ${githubUsername}`);
-    let resp = await okto.request('GET /orgs/{org}/memberships/{username}', {
-          org: LP_ORG_NAME,
-          username: githubUsername,
-          headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
-                    }
-        });
+  let resp = await okto.request("GET /orgs/{org}/memberships/{username}", {
+    org: LP_ORG_NAME,
+    username: githubUsername,
+    headers: {
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
 
-        if (resp.status !== 200) {
-          return false;
-      }
+  if (resp.status !== 200) {
+    return false;
+  }
 
-      let data =  resp.data;
-      if (data.state === 'active') {
-        return true;
-    } else {
-        return false;
-    }
+  let data = resp.data;
+  if (data.state === "active") {
+    return true;
+  } else {
+    return false;
+  }
 }
 
-
 export async function initiateDeviceFlow() {
-let client_id = LP_GH_APP_ID
- let resp = await fetch(`https://github.com/login/device/code?client_id=${client_id}&scope=user`, {
-    method: 'POST',
-    headers: {
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Accept': 'application/json'
-    }
-  });
+  let client_id = LP_GH_APP_ID;
+  let resp = await fetch(
+    `https://github.com/login/device/code?client_id=${client_id}&scope=user`,
+    {
+      method: "POST",
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28",
+        Accept: "application/json",
+      },
+    },
+  );
 
   let data = await resp.json();
   return data;
 }
-
-
