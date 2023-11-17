@@ -4,13 +4,17 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { ALL_RESPONSES, createResponse } from './util/responses.js';
-import { userGithubMap } from './model/record.js';
+import { userGithubMap } from './model/dbHandler.js';
 import { isRepoMember } from './util/github.js';
 dotenv.config();
 const __dirname = new URL('.', import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
+const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
+
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers] });
+let server;
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -27,6 +31,30 @@ for (const file of commandFiles) {
 	}
 }
 
+class DiscordServer {
+	guild;
+	roles;
+
+	constructor() {
+		this.client = client;
+	}
+
+	async init() {
+		await this.client.login(TOKEN);
+		console.log('Discord client logged in');
+	}
+
+	async getparams() {
+		const guild = await this.client.guilds.fetch(GUILD_ID);
+		const roles = await guild.roles.fetch();
+
+		this.guild = guild;
+		this.roles = {}
+		for (const [id,role] of roles) {
+			this.roles[role.name.toLowerCase()] = role;
+		}
+	}
+}
 
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
@@ -36,11 +64,9 @@ client.once(Events.ClientReady, c => {
 
 client.on(Events.InteractionCreate, async interaction => {
 	console.log('Interaction received');
-	// console.log(interaction);
-
 	if (interaction.isButton()) {
 		if (interaction.customId.startsWith('verify_button_')) {
-			// console.log(userGithubMap)
+			
 			const githubResponse = userGithubMap[interaction.user.id];
 			if (!githubResponse) {
 				await interaction.update({
@@ -49,11 +75,10 @@ client.on(Events.InteractionCreate, async interaction => {
 				});
 				return;
 			}
-
-			let client_id = "Iv1.bfff0a578d157ec8";
+			
       		let device_code = userGithubMap[interaction.user.id].device_code;
       		let grant_type = 'urn:ietf:params:oauth:grant-type:device_code';
-     		 let resp = await fetch(`https://github.com/login/oauth/access_token?client_id=${client_id}&device_code=${device_code}&grant_type=${grant_type}`, {
+     		 let resp = await fetch(`https://github.com/login/oauth/access_token?client_id=${LP_GITHUB_APP_CLIENT_ID}&device_code=${device_code}&grant_type=${grant_type}`, {
         		method: 'POST',
         		headers: {
           		'X-GitHub-Api-Version': '2022-11-28',
@@ -63,7 +88,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 
       		let data = await resp.json();
-			
+	
       		let access_token = data.access_token;
 
 			  if (!access_token) {
@@ -73,7 +98,6 @@ client.on(Events.InteractionCreate, async interaction => {
 				});
 				return;
 			}
-			
 
 			  let resp2 = await fetch(`https://api.github.com/user`, {
 				method: 'GET',
@@ -82,22 +106,24 @@ client.on(Events.InteractionCreate, async interaction => {
 				  'Accept': 'application/json'
 				}
 			  });
-			  let data2 = await resp2.json();
-			//   console.log(data2);
-		
+			  let data2 = await resp2.json();		
 			  let st = await isRepoMember(data2.login);
-			//   console.log(st);
-			if (st) {
-				await interaction.update({
-					content: createResponse(ALL_RESPONSES.checkMeSuccess, [interaction.user.id]),
-					components: []
-				});
-			} else {
+
+			  if (!st) {
 				await interaction.update({
 					content: createResponse(ALL_RESPONSES.checkMeNotMember, []),
 					components: []
 				});
-			}
+			  }
+
+			  // get the guild
+			  const member = await server.guild.members.fetch(interaction.user.id);
+			  const role = await member.roles.add(server.roles['member'].id);
+			await interaction.update({
+				content: createResponse(ALL_RESPONSES.checkMeSuccess, []),
+				components: []
+			});
+	
 		}
 	} else if (interaction.isCommand()) {
 
@@ -140,6 +166,7 @@ client.on(Events.GuildMemberAdd, async member => {
 });
 
 
-
 // Log in to Discord with your client's token
-client.login(TOKEN);
+server = new DiscordServer();
+await server.init();
+await server.getparams();
