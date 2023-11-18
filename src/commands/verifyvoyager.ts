@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import {
   ActionRowBuilder,
   SlashCommandBuilder,
@@ -29,7 +31,7 @@ async function execute(interaction) {
   await interaction.reply({
     content: createResponse(ALL_RESPONSES.checkMe, [
       GITHUB_VERIFY_URL,
-      ret.user_code,
+      (ret as any).user_code,
     ]),
     components: [row],
   });

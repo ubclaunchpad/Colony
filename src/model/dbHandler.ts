@@ -1,3 +1,4 @@
+//@ts-nocheck
 import {
   DynamoDBClient,
   ListTablesCommand,
@@ -9,6 +10,7 @@ import {
 export const userGithubMap = {};
 
 export class DbHandler {
+  client: DynamoDBClient;
   constructor() {
     this.client = new DynamoDBClient({
       region: "us-west-2",
