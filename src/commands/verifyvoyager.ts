@@ -9,7 +9,7 @@ import { createResponse, ALL_RESPONSES } from "../util/responses.js";
 import { userGithubMap } from "../model/dbHandler.js";
 
 const data = new SlashCommandBuilder()
-  .setName("checkme")
+  .setName("verifyvoyager")
   .setDescription("Check your cosmic credentials with Github");
 
 async function execute(interaction) {

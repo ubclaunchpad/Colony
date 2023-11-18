@@ -1,17 +1,11 @@
-// Require the necessary discord.js classes
-import {
-  Client,
-  Collection,
-  Events,
-  GatewayIntentBits,
-  Guild,
-} from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { ALL_RESPONSES, createResponse } from "./util/responses.js";
-import { userGithubMap } from "./model/dbHandler.js";
+import { DbHandler, userGithubMap } from "./model/dbHandler.js";
 import { isRepoMember } from "./util/github.js";
+
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -26,7 +20,6 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
   ],
 });
-let server;
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
@@ -72,6 +65,10 @@ class DiscordServer {
   }
 }
 
+let server;
+const TABLE_NAME = "rocket";
+const dbHandler = new DbHandler();
+
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, (c) => {
@@ -79,14 +76,17 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  console.log("Interaction received");
+  // console.log("Interaction received");
   if (interaction.isButton()) {
     if (interaction.customId.startsWith("verify_button_")) {
+      // console.log("Verify button pressed");
+
       const githubResponse = userGithubMap[interaction.user.id];
+
       if (!githubResponse) {
         await interaction.update({
           content: createResponse(ALL_RESPONSES.connectionIssue, [
-            interaction.user.username,
+            interaction.user.id,
           ]),
           components: [],
         });
@@ -137,11 +137,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
 
+      await dbHandler.setRecord(TABLE_NAME, interaction.user.id, {
+        PK: {
+          S: interaction.user.id,
+        },
+        SK: {
+          S: interaction.user.id,
+        },
+        integrations: {
+          M: {
+            github: {
+              M: {
+                username: {
+                  S: data2.login,
+                },
+                id: {
+                  N: String(data2.id),
+                },
+                date: {
+                  S: new Date().toISOString(),
+                },
+              },
+            },
+          },
+        },
+      });
+
       // get the guild
       const member = await server.guild.members.fetch(interaction.user.id);
-      const role = await member.roles.add(server.roles["member"].id);
+      await member.roles.add(server.roles["member"].id);
       await interaction.update({
-        content: createResponse(ALL_RESPONSES.checkMeSuccess, []),
+        content: createResponse(ALL_RESPONSES.checkMeSuccess, [
+          interaction.user.id,
+        ]),
         components: [],
       });
     }
@@ -175,7 +203,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, (message) => {
-  console.log("Message received");
+  // console.log("Message received");
   if (!message.content.startsWith("!") || message.author.bot) return;
   // console.log(message);
 });

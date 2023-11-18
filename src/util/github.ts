@@ -20,7 +20,7 @@ const app = new App({
 });
 
 export async function isRepoMember(githubUsername) {
-  console.log(`Checking if member for: ${githubUsername}`);
+  // console.log(`Checking if member for: ${githubUsername}`);
   let okto = await app.getInstallationOctokit(LP_REPO_ID);
   let resp = await okto.request("GET /orgs/{org}/memberships/{username}", {
     org: LP_ORG_NAME,
@@ -31,16 +31,16 @@ export async function isRepoMember(githubUsername) {
   });
 
   if (resp.status !== 200) {
-    console.log("Not a member");
+    // console.log("Not a member");
     return false;
   }
 
   let data = await resp.data;
   if (data.state === "active") {
-    console.log("Is a member");
+    // console.log("Is a member");
     return true;
   } else {
-    console.log("Not a member ---");
+    // console.log("Not a member ---");
     return false;
   }
 }

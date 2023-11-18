@@ -2,11 +2,13 @@ import {
   DynamoDBClient,
   ListTablesCommand,
   GetItemCommand,
+  PutItemCommand,
+  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 
 export const userGithubMap = {};
 
-class DbHandler {
+export class DbHandler {
   constructor() {
     this.client = new DynamoDBClient({
       region: "us-west-2",
@@ -26,14 +28,40 @@ class DbHandler {
     }
   }
 
+  async getAllRecords(tableName) {
+    try {
+      const command = new ScanCommand({
+        TableName: tableName,
+      });
+      const response = await this.client.send(command);
+      return response.Items;
+    } catch (error) {
+      console.error("Error getting all records:", error);
+      throw error;
+    }
+  }
+
   async getItem(tableName, key) {
     try {
       const command = new GetItemCommand({
         TableName: tableName,
-        Key: key,
+        Key: {
+          PK: {
+            S: key,
+          },
+          SK: {
+            S: key,
+          },
+        },
       });
+
       const response = await this.client.send(command);
-      return response.Item;
+
+      if (response.Item) {
+        return response.Item;
+      } else {
+        return null;
+      }
     } catch (error) {
       console.error("Error getting item:", error);
       throw error;
@@ -46,14 +74,9 @@ class DbHandler {
   }
 
   async setRecord(tableName, key, value) {
-    const item = await this.getItem(tableName, key);
-    if (item) {
-      console.log("Record already exists");
-      return;
-    }
     try {
       const command = new PutItemCommand({
-        TableName: tableName,
+        TableName: "rocket",
         Item: value,
       });
       const response = await this.client.send(command);
