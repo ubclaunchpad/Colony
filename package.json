@@ -8,13 +8,12 @@
     "node": "^18.x"
   },
   "scripts": {
-    "start": "node app.js",
+    "start": "node build/app.js",
     "register": "node build/deploy-commands.js",
-    "dev": "nodemon app.js",
+    "dev": "nodemon build/app.js",
     "build": "rimraf ./build && tsc",
     "format:check": "prettier --check .",
-    "format": "prettier --write .",
-    "testa": "node build/mm.js"
+    "format": "prettier --write ."
   },
   "author": "Armin T, LP",
   "dependencies": {

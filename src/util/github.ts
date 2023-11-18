@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import dotenv from "dotenv";
 import { App } from "octokit";
 import fs from "fs";

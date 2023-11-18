@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";

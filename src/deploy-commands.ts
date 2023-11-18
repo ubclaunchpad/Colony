@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import { REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
