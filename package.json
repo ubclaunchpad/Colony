@@ -18,6 +18,7 @@
   "author": "Armin T, LP",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.451.0",
+    "body-parser": "^1.20.2",
     "discord-interactions": "^3.2.0",
     "discord.js": "^14.14.1",
     "dotenv": "^16.0.3",
@@ -29,6 +30,6 @@
     "nodemon": "^2.0.15",
     "prettier": "3.1.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.2"
   }
 }

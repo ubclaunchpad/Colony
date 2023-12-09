@@ -7,12 +7,106 @@ import { ALL_RESPONSES, createResponse } from "./util/responses.js";
 import { DbHandler, userGithubMap } from "./model/dbHandler.js";
 import { isRepoMember } from "./util/github.js";
 
+import express from 'express';
+import bodyParser from 'body-parser';
+import { createHmac } from 'crypto';
+import { readFile } from 'fs/promises';
+
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
+// ---------------------------Webhook Client---------------------------
+const app = express();
+const port = 3000;
+let webhookSecret = "";
+let channelId = "";
+
+// Middleware to parse JSON payloads
+app.use(bodyParser.json());
+
+// Webhook endpoint
+app.post('/webhook', (req, res) => {
+  getConfigFromFile("subscription_configs.json")
+    .then(config => {
+        webhookSecret = config.webhookSecret;
+        channelId = config.channelId;
+        console.log('Webhook secret:', webhookSecret);
+        console.log('Channel ID: ', channelId);
+    })
+    .catch(error => {
+        console.error('Failed to start server:', error);
+    });
+
+  if (!verifySignature(req)) {
+      return res.status(401).send('Invalid signature');
+  }
+
+  // Process the webhook event
+  const event = req.headers['x-github-event'];
+  const payload = req.body;
+
+  if (event === 'pull_request') {
+      // Handle pull request event
+      handlePullRequestEvent(payload);
+  }
+
+  res.status(200).send('Event received');
+});
+
+function handlePullRequestEvent(payload: any) {
+  console.log('Pull Request Created!');
+
+  // Extract necessary information from the pull request event
+  const pr = payload.pull_request;
+  const prTitle = pr.title;
+  const prUrl = pr.html_url;
+  const prAction = payload.action; // e.g., 'opened', 'closed', 'reopened'
+  const repositoryName = payload.repository.full_name;
+
+  // Create a message to send
+  const message = `Pull Request in repository ${repositoryName} has been ${prAction}: ${prTitle}\n${prUrl}`;
+
+  // Send the message to a specific Discord channel
+  sendToDiscordChannel(message);
+}
+
+app.listen(port, () => {
+  console.log(`Server is listening at http://localhost:${port}`);
+});
+
+// Function to verify the webhook signature
+function verifySignature(req: express.Request): boolean {
+  const signature = req.headers['x-hub-signature-256'] as string;
+  const hmac = createHmac('sha256', webhookSecret);
+  const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
+  return signature === digest;
+}
+
+async function getConfigFromFile(filePath: string): Promise<string> {
+  try {
+    const data = await readFile(filePath, 'utf8');
+
+    // Check if the file is empty
+    if (!data) {
+      console.log('The file is empty.');
+      return null;
+    }
+
+    const json = JSON.parse(data);
+    return {
+      webhookSecret: json.webhookSecret,
+      channelId: json.channelId
+    };
+  } catch (error) {
+    console.error('Error reading secret from file:', error);
+    throw error;
+  }
+}
+
+// ---------------------------Discord Bot Client---------------------------
 // Create a new client instance
 const client = new Client({
   intents: [
@@ -218,6 +312,17 @@ client.on(Events.GuildMemberAdd, async (member) => {
     console.log("Failed to send DM:", error);
   }
 });
+
+function sendToDiscordChannel(message: string) {
+  // Assuming 'client' is your Discord.js client
+  const channel = client.channels.cache.get(channelId) as Discord.TextChannel;
+
+  if (channel) {
+      channel.send(message).catch(console.error);
+  } else {
+      console.error(`Channel with ID ${CHANNEL_ID} not found`);
+  }
+}
 
 // Log in to Discord with your client's token
 server = new DiscordServer();
