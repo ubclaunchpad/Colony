@@ -17,6 +17,15 @@ async function execute(interaction) {
   const row = new ActionRowBuilder().addComponents(select);
   
   const teams = await fetch("http://localhost:3000/api/teams").then(res => res.json()) as Array<any>;
+
+  if (teams == null || teams.length == 0) {
+    await interaction.reply({
+      content: "No teams to connect to!",
+      components: [],
+    });
+    return;
+  }
+
   teams.forEach(team => {
     select.addOptions(
       new StringSelectMenuOptionBuilder()

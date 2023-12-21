@@ -17,6 +17,15 @@ async function execute(interaction) {
     const row = new ActionRowBuilder().addComponents(select);
 
     const projects = await fetch(`http://localhost:3000/api/discord/channels?channelId=${interaction.channel.id}`).then(res => res.json()) as Array<any>;
+    
+    if (projects == null || projects.length == 0) {
+        await interaction.reply({
+            content: "No projects to remove!",
+            components: [],
+        });
+        return;
+    }
+
     projects.forEach(project => {
         select.addOptions(
         new StringSelectMenuOptionBuilder()

@@ -236,6 +236,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const row = new ActionRowBuilder().addComponents(select);
 
       const projects = await fetch(`http://localhost:3000/api/teams/${interaction.values[0]}/projects`).then(res => res.json()) as Array<any>;
+      
+      if (projects == null || projects.length == 0) {
+        await interaction.channel.send({
+          content: "No projects to connect to!",
+          components: [],
+        });
+        return;
+      }
+      
       projects.forEach(project => {
         select.addOptions(
           new StringSelectMenuOptionBuilder()
