@@ -5,10 +5,6 @@ import { EmbedBuilder, TextChannel } from 'discord.js';
 const router = express.Router();
 
 router.post('/issue-assigned', async (req, res) => {
-    // const guild = await client.guilds.fetch(process.env.GUILD_ID);
-    // const channels = await guild.channels.fetch();
-    // const channel = channels.find(channel => channel.name == "test-aryan");
-    // (<TextChannel> channel).send("test");
     console.log(req.body);
     // TODO: Send message to discord user (https://stackoverflow.com/questions/63160401/how-can-a-discord-bot-create-a-hyperlink-in-a-discord-message-in-an-embed-or-in)
     const issueAssignedEmbed = new EmbedBuilder()
@@ -20,6 +16,16 @@ router.post('/issue-assigned', async (req, res) => {
 
     await client.users.send(req.body.discord_id, {embeds: [issueAssignedEmbed]});
     res.send('Hello, World!');
+});
+
+router.post("/daily-digest", async (req, res) => {
+    // create embedd
+    // add info
+    // to channel
+    // const guild = await client.guilds.fetch(process.env.GUILD_ID);
+    // const channels = await guild.channels.fetch();
+    // const channel = channels.find(channel => channel.name == "test-aryan");
+    // (<TextChannel> channel).send("test");
 });
 
 export default router;
