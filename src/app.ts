@@ -219,6 +219,25 @@ client.on(Events.GuildMemberAdd, async (member) => {
   }
 });
 
+client.on(Events.GuildScheduledEventCreate, async (guildScheduledEvent) => {
+  console.log("Create");
+  console.log(guildScheduledEvent);
+  console.log('------------------------------------------------------------------------------------------------------------------');
+});
+
+client.on(Events.GuildScheduledEventUpdate, async (oldGuildScheduledEvent, newGuildScheduledEvent) => {
+  console.log("Update");
+  console.log(`guild scheduled event has been updated`);
+  console.log({oldGuildScheduledEvent, newGuildScheduledEvent});
+  console.log('------------------------------------------------------------------------------------------------------------------');
+});
+
+client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
+  console.log("Delete");
+  console.log(guildScheduledEvent);
+  console.log('------------------------------------------------------------------------------------------------------------------');
+});
+
 // Log in to Discord with your client's token
 server = new DiscordServer();
 await server.init();
