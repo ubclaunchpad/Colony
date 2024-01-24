@@ -14,7 +14,8 @@
     "build": "rimraf ./build && tsc",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "dev:server": "nodemon build/api/index.js"
+    "dev:server": "nodemon build/api/index.js",
+    "start:server": "node build/api/index.js"
   },
   "author": "Armin T, LP",
   "dependencies": {
