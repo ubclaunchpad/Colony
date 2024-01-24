@@ -57,7 +57,7 @@ async function execute(interaction) {
     // }
 
     await interaction.reply({
-        content: "Test",
+        content: "RSVPs added",
     });
 }
 
