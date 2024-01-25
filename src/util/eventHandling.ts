@@ -1,6 +1,4 @@
 export async function guildScheduledEventCreate(guildScheduledEvent) {
-  console.log("guildScheduledEventCreate");
-  console.log(guildScheduledEvent);
   const body = {
     eventId: guildScheduledEvent.id,
     serverId: guildScheduledEvent.guildId,
@@ -29,8 +27,6 @@ export async function guildScheduledEventUpdate(
   newGuildScheduledEvent,
   server,
 ) {
-  console.log("guildScheduledEventUpdate");
-  console.log(newGuildScheduledEvent);
   if (
     newGuildScheduledEvent.status === 1 ||
     newGuildScheduledEvent.status === 2
@@ -74,8 +70,6 @@ export async function guildScheduledEventUpdate(
 }
 
 export async function guildScheduledEventDelete(guildScheduledEvent, server) {
-  console.log("guildScheduledEventDelete");
-  console.log(guildScheduledEvent);
   try {
     // await removeRoleFromMember(server);
     // fetch(

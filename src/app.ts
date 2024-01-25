@@ -1,5 +1,15 @@
 //@ts-nocheck
-import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
+import {
+  Client,
+  Collection,
+  Events,
+  GatewayIntentBits,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+} from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -26,6 +36,7 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildScheduledEvents,
     GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -206,6 +217,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
           ephemeral: true,
         });
       }
+    }
+  } else if (interaction.isAnySelectMenu()) {
+    if (interaction.customId === "event-check-in") {
+      const { eventId, email } = JSON.parse(interaction.values);
+
+      // const res = await fetch(
+      //   `https:localhost:3000//guilds/${GUILD_ID}/events/${eventId}/attendees?email=${email}`,
+      // ).then((res) => res.json());
+
+      // if (res.length === 0) {
+      //   await interaction.update({
+      //     content: `You are not RSVPed to this event`,
+      //     components: [],
+      //   });
+      //   return;
+      // }
+
+      const member = await server.guild.members.fetch(interaction.user.id);
+      await member.roles.add(server.roles["explorer"].id);
+
+      await interaction.update({
+        content: `Thanks for checking in for the event!`,
+        components: [],
+        files: ["assets/rocket-landing.gif"],
+      });
     }
   }
 });
