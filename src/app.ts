@@ -19,6 +19,8 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildScheduledEvents,
+    GatewayIntentBits.GuildPresences,
   ],
 });
 
@@ -220,23 +222,107 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.GuildScheduledEventCreate, async (guildScheduledEvent) => {
-  console.log("Create");
-  console.log(guildScheduledEvent);
-  console.log('------------------------------------------------------------------------------------------------------------------');
+  const body = {
+    eventId: guildScheduledEvent.id,
+    serverId: guildScheduledEvent.guildId,
+    eventStartTime: guildScheduledEvent.scheduledStartTimestamp,
+    eventEndTime: guildScheduledEvent.scheduledEndTimestamp,
+    name: guildScheduledEvent.name,
+    categoryOrChannelId: guildScheduledEvent.channelId,
+  };
+  try {
+    // await fetch(
+    //   `https:localhost:3000/guilds/${guildScheduledEvent.guildId}/events/${guildScheduledEvent.id}`,
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify(body),
+    //   },
+    // );
+  } catch (e) {
+    console.error(e);
+  }
 });
 
-client.on(Events.GuildScheduledEventUpdate, async (oldGuildScheduledEvent, newGuildScheduledEvent) => {
-  console.log("Update");
-  console.log(`guild scheduled event has been updated`);
-  console.log({oldGuildScheduledEvent, newGuildScheduledEvent});
-  console.log('------------------------------------------------------------------------------------------------------------------');
-});
+client.on(
+  Events.GuildScheduledEventUpdate,
+  async (oldGuildScheduledEvent, newGuildScheduledEvent) => {
+    console.log("Update");
+    console.log(`guild scheduled event has been updated`);
+    console.log({ oldGuildScheduledEvent, newGuildScheduledEvent });
+    console.log(
+      "------------------------------------------------------------------------------------------------------------------",
+    );
+
+    if (
+      newGuildScheduledEvent.status === 1 ||
+      newGuildScheduledEvent.status === 2
+    ) {
+      const body = {
+        eventId: newGuildScheduledEvent.id,
+        serverId: newGuildScheduledEvent.guildId,
+        eventStartTime: newGuildScheduledEvent.scheduledStartTimestamp,
+        eventEndTime: newGuildScheduledEvent.scheduledEndTimestamp,
+        name: newGuildScheduledEvent.name,
+        categoryOrChannelId: newGuildScheduledEvent.channelId,
+      };
+      try {
+        // await fetch(
+        //   `https:localhost:3000/guilds/${newGuildScheduledEvent.guildId}/events/${newGuildScheduledEvent.id}`,
+        //   {
+        //     method: "PATCH",
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify(body),
+        //   },
+        // );
+      } catch (e) {
+        console.error(e);
+      }
+    } else if (
+      newGuildScheduledEvent.status === 3 ||
+      newGuildScheduledEvent.status === 4
+    ) {
+      try {
+        // await removeRoleFromMember();
+        // fetch(
+        //   `https:localhost:3000/guilds/${newGuildScheduledEvent.guildId}/events/${newGuildScheduledEvent.id}`,
+        //   { method: "DELETE" },
+        // );
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  },
+);
 
 client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
   console.log("Delete");
   console.log(guildScheduledEvent);
-  console.log('------------------------------------------------------------------------------------------------------------------');
+  console.log(
+    "------------------------------------------------------------------------------------------------------------------",
+  );
+  try {
+    // await removeRoleFromMember();
+    // fetch(
+    //   `https:localhost:3000/guilds/${guildScheduledEvent.guildId}/events/${guildScheduledEvent.id}`,
+    //   { method: "DELETE" },
+    // );
+  } catch (e) {
+    console.error(e);
+  }
 });
+
+async function removeRoleFromMember() {
+  const role = server.roles["attendee"];
+  await server.guild.members.fetch();
+  await server.guild.roles.cache.get(role.id).members.forEach((member) => {
+    member.roles.remove(role);
+  });
+}
 
 // Log in to Discord with your client's token
 server = new DiscordServer();
