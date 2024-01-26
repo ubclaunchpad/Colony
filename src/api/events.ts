@@ -1,7 +1,12 @@
 // EVENTS API
 import Router from "@koa/router";
 import { dbHandler } from "../model/dbHandler.js";
-import { AttendeeInfo, IAttendee, IEvent } from "../util/eventTypes.js";
+import {
+  AttendeeInfo,
+  AttendeeQuery,
+  IAttendee,
+  IEvent,
+} from "../util/eventTypes.js";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 const router = new Router();
@@ -140,17 +145,43 @@ router.post("/guilds/:gid/events/:id/attendees", async (ctx) => {
   }
 });
 
-// DELETE /events/{id}/attendees
-router.delete("/guilds/:gid/events/:id/attendees", async (ctx) => {
+// POST /events/{id}/attendees/query
+router.post("/guilds/:gid/events/:id/attendees/query", async (ctx) => {
   const eventId = ctx.params.id;
-  const attendee = ctx.request.body as IAttendee;
+  const attendees = ctx.request.body as { attendees: { email: string }[] };
 
   const PK = DB_KEY.EVENT(eventId);
-  const SK = DB_KEY.ATTENDEE(attendee.email);
+  let results: IAttendee[] = [];
 
   try {
-    await dbHandler.deleteRecord(TABLE_NAME, PK, SK);
-    ctx.body = "Deleted";
+    for (const attendee of attendees.attendees) {
+      const SK = DB_KEY.ATTENDEE(attendee.email);
+      const result = (await dbHandler.fetchRecord(
+        TABLE_NAME,
+        PK,
+        SK,
+      )) as IAttendee;
+      results.push(result);
+    }
+    ctx.body = results;
+  } catch (error) {
+    console.error("Error setting record:", error);
+    throw error;
+  }
+});
+
+// DELETE /events/{id}/attendees
+router.post("/guilds/:gid/events/:id/attendees/delete", async (ctx) => {
+  const eventId = ctx.params.id;
+  const attendees = ctx.request.body as AttendeeQuery;
+
+  const PK = DB_KEY.EVENT(eventId);
+
+  try {
+    attendees.attendees.forEach(async (attendee) => {
+      const SK = DB_KEY.ATTENDEE(attendee.email);
+      await dbHandler.deleteRecord(TABLE_NAME, PK, SK);
+    });
   } catch (error) {
     console.error("Error deleting record:", error);
     throw error;

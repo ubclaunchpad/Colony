@@ -42,5 +42,11 @@ type IAttendee = {
 
 type AttendeeStatus = "GOING" | "NOT_GOING" | "MAYBE" | "AWAITING" | "CHECKED_IN";
 
+type AttendeeQuery = {
+    attendees: {email: String}[];
+}
 
-export { IEvent, EventInfo, EventStatus, IAttendee, AttendeeStatus , AttendeeInfo};
+
+export { IEvent, EventInfo, EventStatus, IAttendee, AttendeeStatus , AttendeeInfo, AttendeeQuery};
+
+
