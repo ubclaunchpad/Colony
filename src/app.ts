@@ -27,6 +27,7 @@ const __dirname = new URL(".", import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
+const API_URL = process.env.API_URL;
 
 // Create a new client instance
 const client = new Client({
@@ -220,22 +221,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   } else if (interaction.isAnySelectMenu()) {
     if (interaction.customId === "event-check-in") {
-      const { eventId, email } = JSON.parse(interaction.values);
+      const { eventId, email, name } = JSON.parse(interaction.values);
 
-      // const res = await fetch(
-      //   `https:localhost:3000//guilds/${GUILD_ID}/events/${eventId}/attendees?email=${email}`,
-      // ).then((res) => res.json());
+      const res = await fetch(
+        `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ attendees: [{ email }] }),
+        },
+      ).then((res) => res.json());
 
-      // if (res.length === 0) {
-      //   await interaction.update({
-      //     content: `You are not RSVPed to this event`,
-      //     components: [],
-      //   });
-      //   return;
-      // }
+      if (res.length === 0) {
+        await interaction.update({
+          content: `You are not RSVPed to this event`,
+          components: [],
+        });
+        return;
+      }
 
       const member = await server.guild.members.fetch(interaction.user.id);
-      await member.roles.add(server.roles["explorer"].id);
+      await member.roles.add(server.roles["event attendee"].id);
 
       await interaction.update({
         content: `Thanks for checking in for the event!`,

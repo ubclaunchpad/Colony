@@ -3,8 +3,6 @@ import {
   SlashCommandBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } from "discord.js";
 import dotenv from "dotenv";
 dotenv.config();
