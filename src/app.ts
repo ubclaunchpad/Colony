@@ -10,7 +10,7 @@ import { isRepoMember } from "./util/github.js";
 import express from 'express';
 import bodyParser from 'body-parser';
 import { createHmac } from 'crypto';
-import { readFile } from 'fs/promises';
+import { promises as promisefs } from 'fs';
 
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -24,24 +24,51 @@ const port = 3000;
 let webhookSecret = "";
 let channelId = "";
 
+interface SecretInfo {
+  webhookSecret: string;
+  channelId: string;
+}
+
+const filePath = '/home/jamesjiang/Colony_test/subscription_configs.json';
+
 // Middleware to parse JSON payloads
 app.use(bodyParser.json());
 
 // Webhook endpoint
-app.post('/webhook', (req, res) => {
-  getConfigFromFile("subscription_configs.json")
-    .then(config => {
-        webhookSecret = config.webhookSecret;
-        channelId = config.channelId;
-        console.log('Webhook secret:', webhookSecret);
-        console.log('Channel ID: ', channelId);
-    })
-    .catch(error => {
-        console.error('Failed to start server:', error);
-    });
+app.post('/webhook/:channelId', (req, res) => {
+  // Get the channelId from the URL
+  channelId = req.params.channelId;
 
-  if (!verifySignature(req)) {
-      return res.status(401).send('Invalid signature');
+  console.log("PR notification receieved!", channelId)
+
+  // Find the corresponding webhook secret
+  try {
+    const fileContents = promisefs.readFile(filePath, 'utf8');
+    let secretInfos;
+
+    if (fileContents && typeof fileContents === 'string' && fileContents.trim()) {
+      // File is not empty, parse the JSON
+      secretInfos = JSON.parse(fileContents) as SecretInfo[];
+    } else {
+      // File is empty, initialize to an empty array
+      secretInfos = [];
+    }
+
+    const secretInfo = secretInfos.find(info => info.channelId === channelId);
+
+    if (secretInfo) {
+      webhookSecret = secretInfo.webhookSecret;
+
+      // Verify with the saved webhook secret
+      if (!verifySignature(req)) {
+        return res.status(401).send('Invalid signature');
+      }
+    } else {
+      res.status(404).send('Channel ID not found');
+    }
+  } catch (error) {
+    console.error('Error reading from the file:', error);
+    res.status(500).send('Internal Server Error');
   }
 
   // Process the webhook event
@@ -83,27 +110,6 @@ function verifySignature(req: express.Request): boolean {
   const hmac = createHmac('sha256', webhookSecret);
   const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
   return signature === digest;
-}
-
-async function getConfigFromFile(filePath: string): Promise<string> {
-  try {
-    const data = await readFile(filePath, 'utf8');
-
-    // Check if the file is empty
-    if (!data) {
-      console.log('The file is empty.');
-      return null;
-    }
-
-    const json = JSON.parse(data);
-    return {
-      webhookSecret: json.webhookSecret,
-      channelId: json.channelId
-    };
-  } catch (error) {
-    console.error('Error reading secret from file:', error);
-    throw error;
-  }
 }
 
 // ---------------------------Discord Bot Client---------------------------

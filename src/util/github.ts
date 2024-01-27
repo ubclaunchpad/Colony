@@ -6,7 +6,7 @@ import fs from "fs";
 dotenv.config();
 
 import { randomBytes } from 'crypto';
-import { writeFile } from 'fs/promises';
+import { promises as promisefs } from 'fs';
 
 // const webhookSecret = process.env.WEBHOOK_SECRET;
 const appId = process.env.GH_APP_ID;
@@ -73,20 +73,13 @@ export async function connectToGitHub(repoUrl: string, channelId: string) {
   const octokit = await app.getInstallationOctokit(installationId);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
-  // // Fetch repository details using Octokit
-  // const { data: repository } = await octokit.rest.repos.get({
-  //     owner: owner,
-  //     repo: repo,
-  // });
 
-  // // Perform further actions with the repository data
-  // console.log(repository);
-
-  // TODO: set up PR notifications
-  const webhookUrl = "https://0c3c-128-189-176-180.ngrok-free.app/webhook";
+  // Prepare a webhook for that subscription
+  const webhookUrl = "https://0ec4-128-189-176-180.ngrok-free.app/webhook/" + channelId;
   const webhookSecret = generateSecretToken();
 
-  saveSecretToFile(webhookSecret, channelId, "subscription_configs.json");
+  // TODO: we might need to save these in database
+  saveSecretToFile(webhookSecret, channelId, "/home/jamesjiang/Colony_test/subscription_configs.json");
 
   // TODO: check if creating multiple times affect anything
   // TODO: what if multiple different repos are set for notification?
@@ -123,12 +116,29 @@ function generateSecretToken(): string {
   return randomBytes(20).toString('hex');
 }
 
-async function saveSecretToFile(secret: string, channel: string, filePath: string) {
-  const data = JSON.stringify({ webhookSecret: secret, channelId: channel });
+interface SecretInfo {
+  webhookSecret: string;
+  channelId: string;
+}
+
+async function saveSecretToFile(secret: string, channel: string, filePath: string): Promise<void> {
+  const newObject: SecretInfo = { webhookSecret: secret, channelId: channel };
   try {
-      await writeFile(filePath, data, 'utf8');
-      console.log('Secret saved to file.');
+    let data: SecretInfo[];
+    try {
+      // Try to read the existing file
+      const fileContents = await promisefs.readFile(filePath, 'utf8');
+      data = JSON.parse(fileContents) as SecretInfo[];
+    } catch (error) {
+      // If the file does not exist or cannot be read, start with an empty array
+      data = [];
+    }
+    // Append the new object
+    data.push(newObject);
+    // Write the updated array back to the file
+    await promisefs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+    console.log('Secret saved to file.');
   } catch (error) {
-      console.error('Error saving secret to file:', error);
+    console.error('Error saving secret to file:', error);
   }
 }
