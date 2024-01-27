@@ -1,17 +1,33 @@
 //@ts-nocheck
-import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
+import {
+  Client,
+  Collection,
+  Events,
+  GatewayIntentBits,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+} from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { ALL_RESPONSES, createResponse } from "./util/responses.js";
 import { DbHandler, userGithubMap } from "./model/dbHandler.js";
 import { isRepoMember } from "./util/github.js";
+import {
+  guildScheduledEventCreate,
+  guildScheduledEventUpdate,
+  guildScheduledEventDelete,
+} from "./util/eventHandling.js";
 
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
+const API_URL = process.env.API_URL;
 
 // Create a new client instance
 const client = new Client({
@@ -19,6 +35,9 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildScheduledEvents,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -77,11 +96,8 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  // console.log("Interaction received");
   if (interaction.isButton()) {
     if (interaction.customId.startsWith("verify_button_")) {
-      // console.log("Verify button pressed");
-
       const githubResponse = userGithubMap[interaction.user.id];
 
       if (!githubResponse) {
@@ -200,13 +216,45 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
     }
+  } else if (interaction.isAnySelectMenu()) {
+    if (interaction.customId === "event-check-in") {
+      const { eventId, email, name } = JSON.parse(interaction.values);
+
+      const res = await fetch(
+        `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ attendees: [{ email: email }] }),
+        },
+      ).then((res) => res.json());
+
+      // console.log(`${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`);
+
+      if (res.length === 0 || res[0] === null) {
+        await interaction.update({
+          content: `You have not registered for this event.`,
+          components: [],
+        });
+        return;
+      }
+
+      const member = await server.guild.members.fetch(interaction.user.id);
+      await member.roles.add(server.roles["event attendee"].id);
+
+      await interaction.update({
+        content: `Thanks for checking in for the event!`,
+        components: [],
+        files: ["assets/rocket-landing.gif"],
+      });
+    }
   }
 });
 
 client.on(Events.MessageCreate, (message) => {
-  // console.log("Message received");
   if (!message.content.startsWith("!") || message.author.bot) return;
-  // console.log(message);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
@@ -217,6 +265,19 @@ client.on(Events.GuildMemberAdd, async (member) => {
   } catch (error) {
     console.log("Failed to send DM:", error);
   }
+});
+
+client.on(Events.GuildScheduledEventCreate, guildScheduledEventCreate);
+
+client.on(
+  Events.GuildScheduledEventUpdate,
+  async (_, newGuildScheduledEvent) => {
+    await guildScheduledEventUpdate(newGuildScheduledEvent, server);
+  },
+);
+
+client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
+  await guildScheduledEventDelete(guildScheduledEvent, server);
 });
 
 // Log in to Discord with your client's token
