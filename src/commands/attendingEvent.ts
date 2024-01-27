@@ -25,6 +25,13 @@ async function execute(interaction) {
     (await guild.scheduledEvents.fetch()).values(),
   );
 
+  if (events.length === 0) {
+    await interaction.reply({
+      content: "There are no upcoming events",
+    });
+    return;
+  }
+
   const date = new Date(events[0].scheduledStartTimestamp);
   const formattedDate = date.toLocaleString("en-US", {
     timeZone: "PST",
@@ -50,7 +57,7 @@ async function execute(interaction) {
         .setValue(
           JSON.stringify({
             eventId: event.id,
-            email: interaction.options.getString("event"),
+            email: interaction.options.getString("email"),
           }),
         ),
     );

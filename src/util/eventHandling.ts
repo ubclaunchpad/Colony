@@ -23,9 +23,11 @@ export async function guildScheduledEventCreate(guildScheduledEvent) {
     },
   };
 
+  // console.log(`${API_URL}/guilds/${guildScheduledEvent.guildId}/events/${guildScheduledEvent.id}`);
+
   try {
     await fetch(
-      `${API_URL}/guilds/${guildScheduledEvent.guildId}/events/${guildScheduledEvent.id}`,
+      `${API_URL}/guilds/${guildScheduledEvent.guildId}/events`,
       {
         method: "POST",
         headers: {

@@ -50,19 +50,18 @@ async function execute(interaction) {
   const text = await response.text();
   const parsedData = parseCsv(text);
   console.log(parsedData);
-  const body = [];
+  const body = { attendees: [] };
   parsedData.forEach((row) => {
-    body.push({
+    body.attendees.push({
       email: row.email,
       name: row.name,
-      attendeeStatus: row.attendeeStatus,
-      serverId: GUILD_ID,
-      eventId: event.id,
+      attendeeStatus: row.attendeeStatus || "GOING"
     });
   });
 
+  // console.log(`${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`);
   try {
-    await fetch(
+    const res = await fetch(
       `${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`,
       {
         method: "POST",

@@ -96,11 +96,8 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  // console.log("Interaction received");
   if (interaction.isButton()) {
     if (interaction.customId.startsWith("verify_button_")) {
-      // console.log("Verify button pressed");
-
       const githubResponse = userGithubMap[interaction.user.id];
 
       if (!githubResponse) {
@@ -224,19 +221,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const { eventId, email, name } = JSON.parse(interaction.values);
 
       const res = await fetch(
-        `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees`,
+        `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ attendees: [{ email }] }),
+          body: JSON.stringify({ attendees: [{ email: email }] }),
         },
       ).then((res) => res.json());
 
-      if (res.length === 0) {
+      // console.log(`${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`);
+
+      if (res.length === 0 || res[0] === null) {
         await interaction.update({
-          content: `You are not RSVPed to this event`,
+          content: `You have not registered for this event.`,
           components: [],
         });
         return;
@@ -255,9 +254,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, (message) => {
-  // console.log("Message received");
   if (!message.content.startsWith("!") || message.author.bot) return;
-  // console.log(message);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
