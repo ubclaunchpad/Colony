@@ -49,17 +49,17 @@ async function execute(interaction) {
   const response = await fetch(csv.url);
   const text = await response.text();
   const parsedData = parseCsv(text);
-  console.log(parsedData);
+  // console.log(parsedData);
   const body = { attendees: [] };
   parsedData.forEach((row) => {
     body.attendees.push({
-      email: row.email,
-      name: row.name,
+      email: row.email || "",
+      name: row.name || row.email,
       attendeeStatus: row.attendeeStatus || "GOING"
     });
   });
 
-  // console.log(`${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`);
+  console.log(`${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`);
   try {
     const res = await fetch(
       `${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`,
