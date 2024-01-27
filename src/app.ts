@@ -245,9 +245,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await member.roles.add(server.roles["event attendee"].id);
 
       await interaction.update({
-        content: `Thanks for checking in for the event!`,
+        content: `Thanks for checking in for the event!. You now have a special role in the server. check out "The Void" category for the event stage.`,
         components: [],
-        files: ["assets/rocket-landing.gif"],
       });
     }
   }
