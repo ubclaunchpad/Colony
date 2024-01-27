@@ -25,10 +25,11 @@ const data = new SlashCommandBuilder()
 async function execute(interaction) {
   const guild = await interaction.client.guilds.fetch(GUILD_ID);
   await guild.roles.fetch();
-  await guild.members.fetch();
-  const role = guild.roles["event moderator"];
-  const user = await interaction.client.users.fetch(interaction.user.id);
-  if (!user.roles.cache.has(role.id)) {
+  const role = guild.roles.cache.find(
+    (role) => role.name === "event moderator",
+  );
+  const member = await guild.members.fetch(interaction.user.id);
+  if (!member.roles.cache.has(role.id)) {
     await interaction.reply({
       content:
         "You do not have Event Moderator role to use this command, add it if you are able to before running this command again",
