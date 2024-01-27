@@ -193,19 +193,24 @@ export class DbHandler {
 
   async bulkAddRecords(tableName, records) {
     try {
-      const command = new BatchWriteItemCommand({
-        RequestItems: {
-          [tableName]: records.map((record) => ({
-            PutRequest: {
-              Item: record,
-            },
-          })),
-        },
-      });
+      const chunkSize = 20;
+      for (let i = 0; i < records.length; i += chunkSize) {
+        const chunk = records.slice(i, i + chunkSize);
 
-      const response = await this.client.send(command);
+        const command = new BatchWriteItemCommand({
+          RequestItems: {
+            [tableName]: chunk.map((record) => ({
+              PutRequest: {
+                Item: record,
+              },
+            })),
+          },
+        });
 
-      return response;
+        await this.client.send(command);
+      }
+
+      return;
     } catch (error) {
       console.error("Error bulk adding records:", error);
       throw error;
