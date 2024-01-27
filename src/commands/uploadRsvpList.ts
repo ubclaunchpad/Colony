@@ -26,7 +26,7 @@ async function execute(interaction) {
   const guild = await interaction.client.guilds.fetch(GUILD_ID);
   await guild.roles.fetch();
   const role = guild.roles.cache.find(
-    (role) => role.name === "event moderator",
+    (role) => role.name === "Event Moderator",
   );
   const member = await guild.members.fetch(interaction.user.id);
   if (!member.roles.cache.has(role.id)) {
