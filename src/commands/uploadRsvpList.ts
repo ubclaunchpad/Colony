@@ -23,8 +23,12 @@ const data = new SlashCommandBuilder()
   );
 
 async function execute(interaction) {
+  const guild = await interaction.client.guilds.fetch(GUILD_ID);
+  await guild.roles.fetch();
+  await guild.members.fetch();
+  const role = guild.roles["event moderator"];
   const user = await interaction.client.users.fetch(interaction.user.id);
-  if (!user.roles.cache.has("Event Moderator")) {
+  if (!user.roles.cache.has(role.id)) {
     await interaction.reply({
       content:
         "You do not have Event Moderator role to use this command, add it if you are able to before running this command again",
@@ -32,7 +36,6 @@ async function execute(interaction) {
     return;
   }
 
-  const guild = await interaction.client.guilds.fetch(GUILD_ID);
   const events = await guild.scheduledEvents.fetch();
   const event: any = Array.from(
     events
@@ -64,11 +67,13 @@ async function execute(interaction) {
     body.attendees.push({
       email: row.email || "",
       name: row.name || row.email,
-      attendeeStatus: row.attendeeStatus || "GOING"
+      attendeeStatus: row.attendeeStatus || "GOING",
     });
   });
 
-  console.log(`${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`);
+  console.log(
+    `${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`,
+  );
   try {
     const res = await fetch(
       `${API_URL}/guilds/${event.guildId}/events/${event.id}/attendees/`,
