@@ -69,20 +69,19 @@ export async function initiateDeviceFlow() {
 
 export async function connectToGitHub(repoUrl: string, channelId: string) {
   // TODO: Maybe we need to get this id automatically somehow?
-  const installationId = "42893145"
+  const installationId = "46623201"
   const octokit = await app.getInstallationOctokit(installationId);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
   // Prepare a webhook for that subscription
-  const webhookUrl = "https://0ec4-128-189-176-180.ngrok-free.app/webhook/" + channelId;
+  const webhookUrl = "https://3b71-206-12-143-201.ngrok-free.app/webhook/" + channelId;
   const webhookSecret = generateSecretToken();
 
   // TODO: we might need to save these in database
   saveSecretToFile(webhookSecret, channelId, "/home/jamesjiang/Colony_test/subscription_configs.json");
 
-  // TODO: check if creating multiple times affect anything
-  // TODO: what if multiple different repos are set for notification?
+  // TODO: fix the duplicated subscriptions (subscribe to the same repo in the same channel multiple times)
   createPullRequestWebhook(octokit, owner, repo, webhookUrl, webhookSecret);
 }
 
