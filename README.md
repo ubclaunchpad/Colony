@@ -22,7 +22,7 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
 ### Steps
 
 1. If you have windows then you must use WSL for Colony, No buts!
-2. The following environment variables must be set:
+2. The following environment variables must be set (you can set them in a `.env` file in the root directory of the project. Note that the values of the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether you are using the official Launchpad bot/discord server/github app):
     ```
     APP_ID=<> # Discord app ID
     DISCORD_TOKEN=<> # Discord bot token
@@ -35,9 +35,6 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
     LP_ORG_NAME=<> # UBC Launch Pad GitHub organization name
     LP_GITHUB_APP_CLIENT_ID=<> # UBC Launch Pad GitHub App client ID
     ```
-  &nbsp; you can set them in a `.env` file in the root directory of the project. Note that the values of
-  the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether
-  you are using the official Launchpad bot/discord server/github app
 
 3. If you are using your own discord bot for personal testing then make sure you add them to the Launchpad discord server with the
 appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it `Administrator` permissions after approval by both your team lead and the Launchpad's discord moderator(s))
