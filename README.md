@@ -34,7 +34,8 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
     LP_REPO_ID=<> # UBC Launch Pad GitHub repository ID
     LP_ORG_NAME=<> # UBC Launch Pad GitHub organization name
     LP_GITHUB_APP_CLIENT_ID=<> # UBC Launch Pad GitHub App client ID
-    ``` you can set them in a `.env` file in the root directory of the project. Note that the values of
+    ```
+  &nbsp; you can set them in a `.env` file in the root directory of the project. Note that the values of
   the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether
   you are using the official Launchpad bot/discord server/github app
 
