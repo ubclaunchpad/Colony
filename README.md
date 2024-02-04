@@ -18,19 +18,11 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
 - [ ] store user GitHub usernames in a database
 - [ ] sync GitHub usernames with Discord usernames
 
-## Installation
+## Setup
+### Steps
 
-    ```bash
-    npm install
-    ```
-
-## Usage
-
-### Variables
-
-First, the following environment variables must be set:
-you can set them in a `.env` file in the root directory of the project.
-
+1. If you have windows then you must use WSL for Colony, No buts!
+2. The following environment variables must be set:
     ```
     APP_ID=<> # Discord app ID
     DISCORD_TOKEN=<> # Discord bot token
@@ -43,11 +35,21 @@ you can set them in a `.env` file in the root directory of the project.
     LP_ORG_NAME=<> # UBC Launch Pad GitHub organization name
     LP_GITHUB_APP_CLIENT_ID=<> # UBC Launch Pad GitHub App client ID
     ```
+you can set them in a `.env` file in the root directory of the project. Note that the values of
+the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether
+you are using the official Launchpad bot/discord server/github app.
+3. If you are using your own discord bot for personal testing then make sure you add them to the Launchpad discord server with the
+appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it `Administrator` permissions after approval by both your team lead and the Launchpad's discord moderator(s))
+4. Run `npm install` to install dependencies
+5. Run `npm run build` to compile Typescript files to Javascript
+6. Run `npm run register` to make commands in `src/commands` usable on the bot you reference in your environment variables file
+7. Run `npm run start` to start your bot
 
-
-    ```bash
-    npm run start
-    ```
+### Resources (Use these resources for general guidance rather than following them as strict guides)
+- Setting up WSL (https://learn.microsoft.com/en-us/windows/wsl/install)
+- Developing in WSL using VSCode (https://code.visualstudio.com/docs/remote/wsl-tutorial)
+- Setting up a discord bot (https://discord.com/developers/docs/getting-started)
+- Registering a github app (https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
 
 ## Contributing
 
