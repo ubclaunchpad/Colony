@@ -6,9 +6,9 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from "discord.js";
-import { initiateDeviceFlow, isRepoMember } from "../util/github.js";
-import { createResponse, ALL_RESPONSES } from "../util/responses.js";
-import { userGithubMap } from "../model/dbHandler.js";
+import { initiateDeviceFlow, isRepoMember } from "../../util/github.js";
+import { createResponse, ALL_RESPONSES } from "../../util/responses.js";
+import { userGithubMap } from "../../model/dbHandler.js";
 
 const data = new SlashCommandBuilder()
   .setName("verifyvoyager")
