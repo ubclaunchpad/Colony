@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { parseCsv } from "../util/parseCsv.js";
+import { parseCsv } from "../../util/parseCsv.js";
 import dotenv from "dotenv";
 dotenv.config();
 

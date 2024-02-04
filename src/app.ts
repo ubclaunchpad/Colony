@@ -42,20 +42,24 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".js"));
+const commandsDirectoryPath = path.join(__dirname, "commands");
+const commandsSubdirectories = fs.readdirSync(commandsDirectoryPath);
+const commandFilePaths = [];
 
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const command = await import(filePath);
+// Get the paths of all command files
+for (const commandsSubdirectory of commandsSubdirectories) {
+  const commandsSubdirectoryPath = path.join(__dirname, `commands/${commandsSubdirectory}`);
+  fs.readdirSync(commandsSubdirectoryPath).map((file) => commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`));
+}
+
+for (const commandFilePath of commandFilePaths) {
+  const command = await import(commandFilePath);
   // Set a new item in the Collection with the key as the command name and the value as the exported module
   if ("data" in command && "execute" in command) {
     client.commands.set(command.data.name, command);
   } else {
     console.log(
-      `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+      `[WARNING] The command at ${commandFilePath} is missing a required "data" or "execute" property.`,
     );
   }
 }
