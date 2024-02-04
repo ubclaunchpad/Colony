@@ -22,7 +22,7 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
 ### Steps
 
 1. If you have windows then you must use WSL for Colony, No buts!
-2. The following environment variables must be set (you can set them in a `.env` file in the root directory of the project. Note that the values of the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether you are using the official Launchpad bot/discord server/github app):
+2. The following environment variables must be set (you can set them in a `.env` file in the root directory of the project and also note that the values of the environment variables depend on whether you are using your own personal bot/discord server/github app for testing or whether you are using the official Launchpad bot/discord server/github app):
     ```
     APP_ID=<> # Discord app ID
     DISCORD_TOKEN=<> # Discord bot token
@@ -37,7 +37,7 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
     ```
 
 3. If you are using your own discord bot for personal testing then make sure you add them to the Launchpad discord server with the
-appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it `Administrator` permissions after approval by both your team lead and the Launchpad's discord moderator(s))
+appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it `Administrator` permissions after the approval of Launchpad's discord moderator(s))
 4. Run `npm install` to install dependencies
 5. Run `npm run build` to compile Typescript files to Javascript
 6. Run `npm run register` to make commands in `src/commands` usable on the bot you reference in your environment variables file
