@@ -37,7 +37,7 @@ A Discord bot that helps manage the UBC Launch Pad community on Discord.
     ```
 
 3. If you are using your own discord bot for personal testing then make sure you add them to the Launchpad discord server with the
-appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it `Administrator` permissions after the approval of Launchpad's discord moderator(s))
+appropriate scopes and permissions before proceeding (make sure your bot atleast has the `bot` and `applications.commands` scopes, and if you dont know what general permissions the bot needs then give it the `Administrator` permission but only after you get the approval to do so from Launchpad's discord moderator(s))
 4. Run `npm install` to install dependencies
 5. Run `npm run build` to compile Typescript files to Javascript
 6. Run `npm run register` to make commands in `src/commands` usable on the bot you reference in your environment variables file
