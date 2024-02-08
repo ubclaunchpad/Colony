@@ -12,6 +12,11 @@ import {
   guildScheduledEventDelete,
 } from "./util/eventHandling.js";
 
+import express from 'express';
+import bodyParser from 'body-parser';
+import { createHmac } from 'crypto';
+import { promises as promisefs } from 'fs';
+
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -19,6 +24,105 @@ const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 const API_URL = process.env.API_URL;
 
+// ---------------------------Webhook Client---------------------------
+const app = express();
+const port = 3000;
+let webhookSecret = "";
+let channelId = "";
+let ownerName = "";
+let repoName = "";
+
+interface SecretInfo {
+  webhookSecret: string;
+  channelId: string;
+}
+
+const filePath = '/home/jamesjiang/Colony_test/subscription_configs.json';
+
+// Middleware to parse JSON payloads
+app.use(bodyParser.json());
+
+// Webhook endpoint
+app.post('/webhook/:channelId/:owner/:repo', (req, res) => {
+  // Get the channelId from the URL
+  channelId = req.params.channelId;
+  ownerName = req.params.owner;
+  repoName = req.params.repo;
+
+  console.log("PR notification receieved!", channelId)
+
+  // Find the corresponding webhook secret
+  try {
+    const fileContents = promisefs.readFile(filePath, 'utf8');
+    let secretInfos;
+
+    if (fileContents && typeof fileContents === 'string' && fileContents.trim()) {
+      // File is not empty, parse the JSON
+      secretInfos = JSON.parse(fileContents) as SecretInfo[];
+    } else {
+      // File is empty, initialize to an empty array
+      secretInfos = [];
+    }
+
+    const secretInfo = secretInfos.find(info => (info.channelId === channelId && info.ownerName === ownerName && info.repoName === repoName));
+
+    if (secretInfo) {
+      webhookSecret = secretInfo.webhookSecret;
+
+      // Verify with the saved webhook secret
+      if (!verifySignature(req)) {
+        return res.status(401).send('Invalid signature');
+      }
+    } else {
+      res.status(404).send('Channel ID not found');
+    }
+  } catch (error) {
+    console.error('Error reading from the file:', error);
+    res.status(500).send('Internal Server Error');
+  }
+
+  // Process the webhook event
+  const event = req.headers['x-github-event'];
+  const payload = req.body;
+
+  if (event === 'pull_request') {
+      // Handle pull request event
+      handlePullRequestEvent(payload);
+  }
+
+  res.status(200).send('Event received');
+});
+
+function handlePullRequestEvent(payload: any) {
+  console.log('Pull Request Created!');
+
+  // Extract necessary information from the pull request event
+  const pr = payload.pull_request;
+  const prTitle = pr.title;
+  const prUrl = pr.html_url;
+  const prAction = payload.action; // e.g., 'opened', 'closed', 'reopened'
+  const repositoryName = payload.repository.full_name;
+
+  // Create a message to send
+  const message = `Pull Request in repository ${repositoryName} has been ${prAction}: ${prTitle}\n${prUrl}`;
+
+  // Send the message to a specific Discord channel
+  sendToDiscordChannel(message);
+}
+
+app.listen(port, () => {
+  console.log(`Server is listening at http://localhost:${port}`);
+});
+
+// Function to verify the webhook signature
+function verifySignature(req: express.Request): boolean {
+  const signature = req.headers['x-hub-signature-256'] as string;
+  const hmac = createHmac('sha256', webhookSecret);
+  const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
+  return signature === digest;
+}
+
+// ---------------------------Discord Bot Client---------------------------
 // Create a new client instance
 const client = new Client({
   intents: [
