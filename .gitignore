@@ -4,3 +4,6 @@ gkey.pem
 examples
 .DS_Store
 build
+.idea
+codeStyles
+.vscode
