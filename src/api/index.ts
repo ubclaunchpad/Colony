@@ -8,7 +8,7 @@ dotenv.config();
 
 const app = new Koa();
 const router = new Router();
-const PORT = process.env.EVENT_API_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 console.log("event api port:", PORT);
 
