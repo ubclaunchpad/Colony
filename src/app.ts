@@ -18,27 +18,30 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
-// ---------------------------Webhook Server---------------------------
+// ---------------------------Webhook Client---------------------------
 const app = express();
 const port = 3000;
 let webhookSecret = "";
 let channelId = "";
+let ownerName = "";
+let repoName = "";
 
 interface SecretInfo {
   webhookSecret: string;
   channelId: string;
 }
 
-// TODO: change to database maybe when integrating
 const filePath = '/home/jamesjiang/Colony_test/subscription_configs.json';
 
 // Middleware to parse JSON payloads
 app.use(bodyParser.json());
 
 // Webhook endpoint
-app.post('/webhook/:channelId', (req, res) => {
+app.post('/webhook/:channelId/:owner/:repo', (req, res) => {
   // Get the channelId from the URL
   channelId = req.params.channelId;
+  ownerName = req.params.owner;
+  repoName = req.params.repo;
 
   console.log("PR notification receieved!", channelId)
 
@@ -55,7 +58,7 @@ app.post('/webhook/:channelId', (req, res) => {
       secretInfos = [];
     }
 
-    const secretInfo = secretInfos.find(info => info.channelId === channelId);
+    const secretInfo = secretInfos.find(info => (info.channelId === channelId && info.ownerName === ownerName && info.repoName === repoName));
 
     if (secretInfo) {
       webhookSecret = secretInfo.webhookSecret;
@@ -81,7 +84,6 @@ app.post('/webhook/:channelId', (req, res) => {
       handlePullRequestEvent(payload);
   }
 
-  // TODO: Somehow it is always sending back 404, and this line is keeing creating error
   res.status(200).send('Event received');
 });
 
@@ -95,7 +97,6 @@ function handlePullRequestEvent(payload: any) {
   const prAction = payload.action; // e.g., 'opened', 'closed', 'reopened'
   const repositoryName = payload.repository.full_name;
 
-  // TODO: Improve the PR message
   // Create a message to send
   const message = `Pull Request in repository ${repositoryName} has been ${prAction}: ${prTitle}\n${prUrl}`;
 

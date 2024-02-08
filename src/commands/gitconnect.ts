@@ -27,12 +27,19 @@ async function execute(interaction) {
   const channelId = interaction.channelId;
 
   // Call the helper to set up the notifications with the github app
-  connectToGitHub(repoLink, channelId);
+  const result = await connectToGitHub(repoLink, channelId);
 
-  await interaction.reply({
-    content:
-      "You have subscribed to the github repository!",
-  });
+  if (result === -1) {
+    await interaction.reply({
+      content:
+        "You have already subscribed to this repository!",
+    });
+  } else {
+    await interaction.reply({
+      content:
+        "You have subscribed to the github repository!",
+    });
+  }
 }
 
 // Function to validate the GitHub repository link

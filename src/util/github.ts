@@ -24,6 +24,8 @@ const app = new App({
   privateKey: privateKey,
 });
 
+const filePath = "/home/jamesjiang/Colony_test/subscription_configs.json";
+
 export async function isRepoMember(githubUsername) {
   // console.log(`Checking if member for: ${githubUsername}`);
   let okto = await app.getInstallationOctokit(LP_REPO_ID);
@@ -68,26 +70,56 @@ export async function initiateDeviceFlow() {
 }
 
 export async function connectToGitHub(repoUrl: string, channelId: string) {
-  // TODO: Maybe we need to get this id automatically somehow?
-  const installationId = "46623201"
-  const octokit = await app.getInstallationOctokit(installationId);
+  // const installationId = "46623201"
+  // const octokit = await app.getInstallationOctokit(installationId);
+  const octokit = await app.getInstallationOctokit(LP_REPO_ID);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
+  // Check existing subscriptions in json file
+  try {
+    const fileContents = await promisefs.readFile(filePath, 'utf8');
+    let secretInfos;
+
+    if (fileContents && typeof fileContents === 'string' && fileContents.trim()) {
+      // File is not empty, parse the JSON
+      secretInfos = JSON.parse(fileContents) as SecretInfo[];
+    } else {
+      // File is empty, initialize to an empty array
+      secretInfos = [];
+    }
+
+    const secretInfo = secretInfos.find(info => (info.channelId === channelId && info.ownerName === owner && info.repoName === repo));
+
+    if (secretInfo) {
+      console.log("Duplicated subscription found")
+      return -1;
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      await promisefs.writeFile(filePath, '', 'utf8');
+
+    } else {
+      console.error('Error reading from the file:', error);
+    }
+  }
+
   // Prepare a webhook for that subscription
-  const webhookUrl = "https://3b71-206-12-143-201.ngrok-free.app/webhook/" + channelId;
+  const webhookUrl = "https://1ab3-128-189-176-180.ngrok-free.app/webhook/" + channelId + "/" + owner + "/" + repo;
   const webhookSecret = generateSecretToken();
 
   // TODO: we might need to save these in database
-  saveSecretToFile(webhookSecret, channelId, "/home/jamesjiang/Colony_test/subscription_configs.json");
+  saveSecretToFile(webhookSecret, channelId, owner, repo, filePath);
 
-  // TODO: fix the duplicated subscriptions (subscribe to the same repo in the same channel multiple times)
-  createPullRequestWebhook(octokit, owner, repo, webhookUrl, webhookSecret);
+  await createPullRequestWebhook(octokit, owner, repo, webhookUrl, webhookSecret);
+
+  return 1;
 }
 
 // Utility function to extract owner and repo name from URL
 function extractOwnerAndRepo(url: string): [string, string] {
   const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+  // TODO: check if client can receive notification
   if (!match) throw new Error('Invalid GitHub repository URL');
   return [match[1], match[2]];
 }
@@ -118,10 +150,12 @@ function generateSecretToken(): string {
 interface SecretInfo {
   webhookSecret: string;
   channelId: string;
+  ownerName: string;
+  repoName: string;
 }
 
-async function saveSecretToFile(secret: string, channel: string, filePath: string): Promise<void> {
-  const newObject: SecretInfo = { webhookSecret: secret, channelId: channel };
+async function saveSecretToFile(secret: string, channel: string, owner: string, repo: string, filePath: string): Promise<void> {
+  const newObject: SecretInfo = { webhookSecret: secret, channelId: channel, ownerName: owner, repoName: repo };
   try {
     let data: SecretInfo[];
     try {
