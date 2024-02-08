@@ -4,11 +4,6 @@ import {
   Collection,
   Events,
   GatewayIntentBits,
-  TextInputBuilder,
-  TextInputStyle,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
 } from "discord.js";
 import fs from "fs";
 import path from "path";
@@ -283,7 +278,17 @@ client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
   await guildScheduledEventDelete(guildScheduledEvent, server);
 });
 
-// Log in to Discord with your client's token
-server = new DiscordServer();
-await server.init();
-await server.getparams();
+
+async function startServer() {
+  // Log in to Discord with your client's token
+  server = new DiscordServer();
+  await server.init();
+  await server.getparams();
+}
+
+
+export const DiscordBotServer = {
+  startServer: startServer,
+  id: "discord-bot-server",
+
+}

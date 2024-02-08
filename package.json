@@ -2,16 +2,18 @@
   "name": "rocket-bot",
   "version": "0.1.0",
   "description": "LP discord bot",
-  "main": "build/app.js",
+  "main": "build/index.js",
   "type": "module",
   "engines": {
     "node": "^18.x"
   },
   "scripts": {
-    "start": "node build/app.js",
+    "start": "node build/index.js",
+    "start:bot": "node build/app.js",
     "register": "node build/deploy-commands.js",
     "dev": "nodemon build/app.js",
     "build": "rimraf ./build && tsc",
+    "build:deploy": "rimraf ./build && tsc && npm run register",
     "clean": "rimraf ./node_modules",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
