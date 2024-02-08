@@ -11,22 +11,33 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.APP_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
+const userArgs = process.argv.slice(2);
 const commands = [];
-// Grab all the command files from the commands directory you created earlier
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".js"));
+let commandsSubdirectories = [];
+const commandFilePaths = [];
 
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const command = await import(filePath);
+if (userArgs.length === 0) {
+  // If user does not specify which command subdirectories to get commands from, then grab all of the command files
+  const commandsDirectoryPath = path.join(__dirname, "commands");
+  commandsSubdirectories = fs.readdirSync(commandsDirectoryPath);
+} else {
+  commandsSubdirectories = userArgs;
+}
+
+// Get the paths of all command files
+for (const commandsSubdirectory of commandsSubdirectories) {
+  const commandsSubdirectoryPath = path.join(__dirname, `commands/${commandsSubdirectory}`);
+  fs.readdirSync(commandsSubdirectoryPath).map((file) => commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`));
+}
+
+for (const commandFilePath of commandFilePaths) {
+  const command = await import(commandFilePath);
   // Set a new item in the Collection with the key as the command name and the value as the exported module
   if ("data" in command && "execute" in command) {
     commands.push(command.data.toJSON());
   } else {
     console.log(
-      `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+      `[WARNING] The command at ${commandFilePath} is missing a required "data" or "execute" property.`,
     );
   }
 }
@@ -51,7 +62,7 @@ const rest = new REST().setToken(TOKEN);
     });
 
     const data2 = await rest.put(
-      Routes.applicationGuildCommands(CLIENT_ID, "1166199074417016842"),
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: commands },
     );
 
