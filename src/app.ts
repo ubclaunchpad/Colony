@@ -1,15 +1,5 @@
 //@ts-nocheck
-import {
-  Client,
-  Collection,
-  Events,
-  GatewayIntentBits,
-  TextInputBuilder,
-  TextInputStyle,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-} from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -48,8 +38,13 @@ const commandFilePaths = [];
 
 // Get the paths of all command files
 for (const commandsSubdirectory of commandsSubdirectories) {
-  const commandsSubdirectoryPath = path.join(__dirname, `commands/${commandsSubdirectory}`);
-  fs.readdirSync(commandsSubdirectoryPath).map((file) => commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`));
+  const commandsSubdirectoryPath = path.join(
+    __dirname,
+    `commands/${commandsSubdirectory}`,
+  );
+  fs.readdirSync(commandsSubdirectoryPath).map((file) =>
+    commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`),
+  );
 }
 
 for (const commandFilePath of commandFilePaths) {
@@ -283,7 +278,14 @@ client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
   await guildScheduledEventDelete(guildScheduledEvent, server);
 });
 
-// Log in to Discord with your client's token
-server = new DiscordServer();
-await server.init();
-await server.getparams();
+async function startServer() {
+  // Log in to Discord with your client's token
+  server = new DiscordServer();
+  await server.init();
+  await server.getparams();
+}
+
+export const DiscordBotServer = {
+  startServer: startServer,
+  id: "discord-bot-server",
+};

@@ -26,8 +26,13 @@ if (userArgs.length === 0) {
 
 // Get the paths of all command files
 for (const commandsSubdirectory of commandsSubdirectories) {
-  const commandsSubdirectoryPath = path.join(__dirname, `commands/${commandsSubdirectory}`);
-  fs.readdirSync(commandsSubdirectoryPath).map((file) => commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`));
+  const commandsSubdirectoryPath = path.join(
+    __dirname,
+    `commands/${commandsSubdirectory}`,
+  );
+  fs.readdirSync(commandsSubdirectoryPath).map((file) =>
+    commandFilePaths.push(`${commandsSubdirectoryPath}/${file}`),
+  );
 }
 
 for (const commandFilePath of commandFilePaths) {

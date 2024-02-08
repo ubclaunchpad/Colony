@@ -26,16 +26,13 @@ export async function guildScheduledEventCreate(guildScheduledEvent) {
   // console.log(`${API_URL}/guilds/${guildScheduledEvent.guildId}/events/${guildScheduledEvent.id}`);
 
   try {
-    await fetch(
-      `${API_URL}/guilds/${guildScheduledEvent.guildId}/events`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
+    await fetch(`${API_URL}/guilds/${guildScheduledEvent.guildId}/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(body),
+    });
   } catch (e) {
     console.error(e);
   }
