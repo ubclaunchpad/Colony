@@ -72,9 +72,9 @@ export async function initiateDeviceFlow() {
 
 export async function connectToGitHub(repoUrl: string, channelId: string) {
   // TODO: double check this before testing
-  const installationId = "46623201"
-  const octokit = await app.getInstallationOctokit(installationId);
-  // const octokit = await app.getInstallationOctokit(LP_REPO_ID);
+  // const installationId = "46623201"
+  // const octokit = await app.getInstallationOctokit(installationId);
+  const octokit = await app.getInstallationOctokit(LP_REPO_ID);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
