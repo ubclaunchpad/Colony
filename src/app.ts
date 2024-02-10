@@ -37,7 +37,8 @@ interface SecretInfo {
   channelId: string;
 }
 
-const filePath = '/home/jamesjiang/Colony_test/subscription_configs.json';
+// TODO: change this
+const filePath = '/subscription_configs.json';
 
 // Middleware to parse JSON payloads
 app.use(bodyParser.json());

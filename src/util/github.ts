@@ -24,7 +24,8 @@ const app = new App({
   privateKey: privateKey,
 });
 
-const filePath = "/home/jamesjiang/Colony_test/subscription_configs.json";
+// TODO: change this
+const filePath = "/subscription_configs.json";
 
 export async function isRepoMember(githubUsername) {
   // console.log(`Checking if member for: ${githubUsername}`);
@@ -105,7 +106,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string) {
   }
 
   // Prepare a webhook for that subscription
-  const webhookUrl = "https://1ab3-128-189-176-180.ngrok-free.app/webhook/" + channelId + "/" + owner + "/" + repo;
+  const webhookUrl = "colony-production.up.railway.app/webhook/" + channelId + "/" + owner + "/" + repo;
   const webhookSecret = generateSecretToken();
 
   // TODO: we might need to save these in database

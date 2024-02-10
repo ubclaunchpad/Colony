@@ -4,7 +4,7 @@ import {
 
 import {
   connectToGitHub
-} from "../util/github.js"
+} from "../../util/github.js"
 
 const data = new SlashCommandBuilder()
   .setName("gitconnect")
