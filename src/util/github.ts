@@ -25,7 +25,7 @@ const app = new App({
 });
 
 // TODO: change this
-const filePath = "/subscription_configs.json";
+const filePath = "/home/jamesjiang/Colony_test/subscription_configs.json";
 
 export async function isRepoMember(githubUsername) {
   // console.log(`Checking if member for: ${githubUsername}`);
@@ -71,6 +71,7 @@ export async function initiateDeviceFlow() {
 }
 
 export async function connectToGitHub(repoUrl: string, channelId: string) {
+  // TODO: double check this before testing
   // const installationId = "46623201"
   // const octokit = await app.getInstallationOctokit(installationId);
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
@@ -106,7 +107,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string) {
   }
 
   // Prepare a webhook for that subscription
-  const webhookUrl = "colony-production.up.railway.app/webhook/" + channelId + "/" + owner + "/" + repo;
+  const webhookUrl = "https://colony-production.up.railway.app/webhook/" + channelId + "/" + owner + "/" + repo;
   const webhookSecret = generateSecretToken();
 
   // TODO: we might need to save these in database
