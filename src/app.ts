@@ -278,6 +278,15 @@ client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
   await guildScheduledEventDelete(guildScheduledEvent, server);
 });
 
+export function sendToDiscordChannel(message: string, channelId: string) {
+  const channel = client.channels.cache.get(channelId) as Discord.TextChannel;
+  if (channel) {
+      channel.send(message).catch(console.error);
+  } else {
+      console.error(`Channel with ID ${CHANNEL_ID} not found`);
+  }
+}
+
 async function startServer() {
   // Log in to Discord with your client's token
   server = new DiscordServer();
