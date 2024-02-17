@@ -3,16 +3,19 @@
 import dotenv from "dotenv";
 import { App } from "octokit";
 import fs from "fs";
+import path from "path";
 dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 import { randomBytes } from 'crypto';
 import { promises as promisefs } from 'fs';
 
 // const webhookSecret = process.env.WEBHOOK_SECRET;
 const appId = process.env.GH_APP_ID;
-const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-// const privateKey = process.env.GH_KEY;
+// const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
+// const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+const privateKey = process.env.GH_KEY;
 
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
@@ -25,7 +28,9 @@ const app = new App({
 });
 
 // TODO: change this
-const filePath = "/home/jamesjiang/Colony_test/subscription_configs.json";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const filePath = path.join(__dirname, process.env.GITHUB_SUB_FILE_PATH);
 
 export async function isRepoMember(githubUsername) {
   // console.log(`Checking if member for: ${githubUsername}`);
@@ -80,6 +85,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string) {
 
   // Check existing subscriptions in json file
   try {
+    const fPath = path.resolve(__dirname, filePath);
     const fileContents = await promisefs.readFile(filePath, 'utf8');
     let secretInfos;
 

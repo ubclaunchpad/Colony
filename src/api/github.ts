@@ -3,11 +3,19 @@ import Router from "@koa/router";
 import { createHmac } from 'crypto';
 import { promises as fs } from 'fs';
 import { sendToDiscordChannel } from "../app.js";
+import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
+
+dotenv.config();
 
 const router = new Router();
 
 // TODO: change this
-const filePath = '/home/jamesjiang/Colony_test/subscription_configs.json';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const filePath = path.join(__dirname, process.env.GITHUB_SUB_FILE_PATH);
 
 interface SecretInfo {
     webhookSecret: string;
