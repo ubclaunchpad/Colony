@@ -145,6 +145,61 @@ async function createPullRequestWebhook(octokit: Octokit, owner: string, repo: s
   }
 }
 
+export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
+  // TODO: Change this before testing
+  // const installationId = "46623201"
+  // const octokit = await app.getInstallationOctokit(installationId);
+  const octokit = await app.getInstallationOctokit(LP_REPO_ID);
+
+  const [owner, repo] = extractOwnerAndRepo(repoUrl);
+
+  const webhookUrl = "https://colony-production.up.railway.app/webhook/" + channelId + "/" + owner + "/" + repo;
+
+  const webhookId = await findWebhookIdByUrl(octokit, owner, repo, webhookUrl);
+  if (webhookId !== undefined) {
+      await removeRemoteWebhook(octokit, owner, repo, webhookId);
+      // TODO: remove the relavent webhook credentials in DB as well
+  } else {
+      console.log(`No webhook matching URL ${webhookUrl} found to remove.`);
+  }
+}
+
+async function findWebhookIdByUrl(octokit: Octokit, owner: string, repo: string, webhookUrl: string): Promise<number | undefined> {
+  try {
+      const response = await octokit.rest.repos.listWebhooks({
+          owner,
+          repo,
+      });
+
+      const matchingWebhook = response.data.find(webhook => webhook.config.url === webhookUrl);
+
+      if (matchingWebhook) {
+          console.log(`Found webhook with ID ${matchingWebhook.id} matching URL ${webhookUrl}`);
+          return matchingWebhook.id;
+      } else {
+          console.log(`No webhook found matching URL ${webhookUrl}`);
+          return undefined;
+      }
+  } catch (error) {
+      console.error('Error finding webhook by URL:', error);
+      return undefined;
+  }
+}
+
+async function removeRemoteWebhook(octokit: Octokit, owner: string, repo: string, webhookId: number) {
+  try {
+      await octokit.rest.repos.deleteWebhook({
+          owner,
+          repo,
+          hook_id: webhookId,
+      });
+
+      console.log(`Webhook with ID ${webhookId} removed successfully.`);
+  } catch (error) {
+      console.error('Error removing webhook:', error);
+  }
+}
+
 function generateSecretToken(): string {
   return randomBytes(20).toString('hex');
 }
