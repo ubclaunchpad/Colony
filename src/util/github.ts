@@ -3,34 +3,47 @@
 import dotenv from "dotenv";
 import { App } from "octokit";
 import fs from "fs";
-import path from "path";
 dotenv.config();
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 import { randomBytes } from 'crypto';
 import { promises as promisefs } from 'fs';
+import { dbHandler } from "../model/dbHandler.js";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
-// const webhookSecret = process.env.WEBHOOK_SECRET;
 const appId = process.env.GH_APP_ID;
+// TODO: check this before testing
+// For local test in James' branch
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+
 const privateKey = process.env.GH_KEY;
 
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
+const GUILD_ID = process.env.GUILD_ID;
+
+// TODO: check this before testing
+const webhookURL = "https://colony-production.up.railway.app/webhook/";
+// For local test with ngrok
+// const webhookURL = "https://02d6-128-189-176-180.ngrok-free.app/webhook/";
+export const TABLE_NAME = "github_events";
+
+// TODO: Edit the list of events for the webhook to listen on here
+const EVENTS = ['pull_request', 'issues'];
+
+export class DB_KEY {
+  static REPO = (repoName) => `REPO#${repoName}`;
+  static CHANNEL = (channelId) => `CHANNEL#${channelId}`;
+  static ORG = (orgName) => `ORG#${orgName}`;
+  static SERVER = (serverId) => `SERVER#${serverId}`;
+}
 
 // This creates a new instance of the Octokit App class.
 const app = new App({
   appId: appId,
   privateKey: privateKey,
 });
-
-// TODO: change this
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const filePath = path.join(__dirname, process.env.GITHUB_SUB_FILE_PATH);
 
 export async function isRepoMember(githubUsername) {
   // console.log(`Checking if member for: ${githubUsername}`);
@@ -75,111 +88,360 @@ export async function initiateDeviceFlow() {
   return data;
 }
 
-export async function connectToGitHub(repoUrl: string, channelId: string) {
-  // TODO: double check this before testing
-  // const installationId = "46623201"
+export async function connectToGitHub(repoUrl: string, channelId: string, eventType: string) {
+  // TODO: check this before testing
+  // const installationId = "46623201";
   // const octokit = await app.getInstallationOctokit(installationId);
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
-  // Check existing subscriptions in json file
-  try {
-    const fPath = path.resolve(__dirname, filePath);
-    const fileContents = await promisefs.readFile(filePath, 'utf8');
-    let secretInfos;
-
-    if (fileContents && typeof fileContents === 'string' && fileContents.trim()) {
-      // File is not empty, parse the JSON
-      secretInfos = JSON.parse(fileContents) as SecretInfo[];
+  // check existing webhook or not, if no, create one
+  const error = await findExistingWebhook(LP_ORG_NAME, octokit, webhookURL).then(found => {
+    if (found) {
+      console.log('Webhook already exists.');
     } else {
-      // File is empty, initialize to an empty array
-      secretInfos = [];
-    }
+      console.log('No existing webhook found.');
+      // Create a new webhook for the whole orgnization
+      const webhookConfig = {
+        url: webhookURL,
+        contentType: 'json',
+        events: EVENTS,
+        active: true, // Optional, defaults to true if not specified
+      };
 
-    const secretInfo = secretInfos.find(info => (info.channelId === channelId && info.ownerName === owner && info.repoName === repo));
-
-    if (secretInfo) {
-      console.log("Duplicated subscription found")
-      return -1;
+      try {
+        createOrgWebhook(LP_ORG_NAME, octokit, webhookConfig);
+        return null;
+      } catch (error) {
+        return "Error creating webhook";
+      }
     }
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      await promisefs.writeFile(filePath, '', 'utf8');
+  });
 
-    } else {
-      console.error('Error reading from the file:', error);
-    }
+  if (error !== null) {
+    return error;
   }
 
-  // Prepare a webhook for that subscription
-  const webhookUrl = "https://colony-production.up.railway.app/webhook/" + channelId + "/" + owner + "/" + repo;
-  const webhookSecret = generateSecretToken();
+  const PK_REPO = DB_KEY.ORG(LP_ORG_NAME);
+  const SK_REPO = DB_KEY.REPO(repo);
 
-  // TODO: we might need to save these in database
-  saveSecretToFile(webhookSecret, channelId, owner, repo, filePath);
+  const PK_CHANNEL = DB_KEY.SERVER(GUILD_ID);
+  const SK_CHANNEL = DB_KEY.CHANNEL(channelId);
 
-  await createPullRequestWebhook(octokit, owner, repo, webhookUrl, webhookSecret);
+  // Get current date
+  const currentDate = new Date();
+  const dateString = currentDate.toISOString().split('T')[0];
 
-  return 1;
+  // Check existing subscriptions in DB
+  try {
+    const result = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
+    if (result == null) {
+      console.log("No existing repo record, create new record");
+      // No existing repo record, create new record
+
+      // Add in repos partition
+      // Prepare the TS object
+      const record = {
+        subscribers: {
+          [channelId]: {
+            channelid: channelId,
+            dateConnected: dateString,
+            events: [eventType],
+          }
+        }
+      };
+      
+      // Convert to DB record
+      const dbRecord = marshall(record);
+
+      try {
+        await dbHandler.addRecord(TABLE_NAME, PK_REPO, SK_REPO, dbRecord);
+      } catch (error) {
+        console.error("Error adding record:", error);
+        throw error;
+      }
+
+      // Add in channels partition
+      try {
+        const result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+        if (result == null) {
+          console.log("No existing channel record, create new record");
+          // No existing channel record, create new record
+          // Prepare the TS object
+          const record = {
+            subscribed: {
+              [repo]: {
+                repoName: repo,
+                dateConnected: dateString,
+                events: [eventType],
+              }
+            }
+          };
+          
+          // Convert to DB record
+          const dbRecord = marshall(record);
+
+          try {
+            await dbHandler.addRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+          } catch (error) {
+            console.error("Error adding record:", error);
+            throw error;
+          }
+        } else {
+          console.log("No repo entry, create new entry in existing channel record");
+          // No repo entry, create new entry in existing channel record
+
+          delete result.PK;
+          delete result.SK;
+
+          result['subscribed'][repo] = {
+            repoName: repo,
+            dateConnected: dateString,
+            events: [eventType],
+          };
+
+          // Convert to DB record
+          const dbRecord = marshall(result);
+
+          try {
+            await dbHandler.updateRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+          } catch (error) {
+            console.error("Error updating record:", error);
+            throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+      }
+    } else if (result["subscribers"][channelId] == null) {
+      console.log("No existing channel entry, create new entry in existing record");
+      // No existing channel entry, create new entry in existing record
+
+      delete result.PK;
+      delete result.SK;
+
+      result['subscribers'][channelId] = {
+        channelid: channelId,
+        dateConnected: dateString,
+        events: [eventType],
+      };
+
+      // Convert to DB record
+      const dbRecord = marshall(result);
+
+      try {
+        await dbHandler.updateRecord(TABLE_NAME, PK_REPO, SK_REPO, dbRecord);
+      } catch (error) {
+        console.error("Error updating record:", error);
+        throw error;
+      }
+
+      // Add in channels partition
+      try {
+        const result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+        if (result == null) {
+          console.log("No existing channel record, create new record");
+          // No existing channel record, create new record
+          // Prepare the TS object
+          const record = {
+            subscribed: {
+              [repo]: {
+                repoName: repo,
+                dateConnected: dateString,
+                events: [eventType],
+              }
+            }
+          };
+          
+          // Convert to DB record
+          const dbRecord = marshall(record);
+
+          try {
+            await dbHandler.addRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+          } catch (error) {
+            console.error("Error adding record:", error);
+            throw error;
+          }
+        } else {
+          console.log("No repo entry, create new entry in existing channel record");
+          // No repo entry, create new entry in existing channel record
+
+          delete result.PK;
+          delete result.SK;
+
+          result['subscribed'][repo] = {
+            repoName: repo,
+            dateConnected: dateString,
+            events: [eventType],
+          };
+
+          // Convert to DB record
+          const dbRecord = marshall(result);
+
+          try {
+            await dbHandler.updateRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+          } catch (error) {
+            console.error("Error updating record:", error);
+            throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+      }
+    } else {
+      // TODO: one more case of exisiting subscription from the same channel and for the same repo, but missing requested event
+      // Existing subscription
+      console.log("Duplicated subscription found")
+      return "1";
+    }
+  } catch (error) {
+    console.error("Error fetching record:", error);
+    throw error;
+  }
+
+  return "2";
 }
 
 // Utility function to extract owner and repo name from URL
 function extractOwnerAndRepo(url: string): [string, string] {
   const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-  // TODO: check if client can receive notification
   if (!match) throw new Error('Invalid GitHub repository URL');
   return [match[1], match[2]];
 }
 
-async function createPullRequestWebhook(octokit: Octokit, owner: string, repo: string, webhookUrl: string, webhookSecret: string) {
+async function findExistingWebhook(org: string, octokit: Octokit, webhookUrlPrefix: string): Promise<boolean> {
   try {
-      const response = await octokit.rest.repos.createWebhook({
-          owner,
-          repo,
-          config: {
-              url: webhookUrl,
-              content_type: 'json',
-              secret: webhookSecret,
-          },
-          events: ['pull_request'],
+      const response = await octokit.rest.orgs.listWebhooks({
+          org,
       });
 
-      console.log(`Webhook created: ${response.data.url}`);
+      // Search through the webhooks to find if any URL starts with the specified prefix
+      const found = response.data.some(webhook => webhook.config.url.startsWith(webhookUrlPrefix));
+
+      return found;
   } catch (error) {
-      console.error('Error creating webhook:', error);
+      console.error('Failed to list webhooks:', error);
+      return false;
   }
 }
 
-function generateSecretToken(): string {
-  return randomBytes(20).toString('hex');
-}
-
-interface SecretInfo {
-  webhookSecret: string;
-  channelId: string;
-  ownerName: string;
-  repoName: string;
-}
-
-async function saveSecretToFile(secret: string, channel: string, owner: string, repo: string, filePath: string): Promise<void> {
-  const newObject: SecretInfo = { webhookSecret: secret, channelId: channel, ownerName: owner, repoName: repo };
+async function createOrgWebhook(org: string, octokit: Octokit, webhookConfig: { url: string; contentType: string; secret?: string; events: string[]; active?: boolean; }) {
   try {
-    let data: SecretInfo[];
-    try {
-      // Try to read the existing file
-      const fileContents = await promisefs.readFile(filePath, 'utf8');
-      data = JSON.parse(fileContents) as SecretInfo[];
-    } catch (error) {
-      // If the file does not exist or cannot be read, start with an empty array
-      data = [];
-    }
-    // Append the new object
-    data.push(newObject);
-    // Write the updated array back to the file
-    await promisefs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-    console.log('Secret saved to file.');
+    const response = await octokit.request('POST /orgs/{org}/hooks', {
+      org: org,
+      name: 'web',
+      active: true,
+      events: EVENTS,
+      config: {
+        url: webhookConfig.url,
+        content_type: 'json'
+      },
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    console.log('Webhook created successfully:', response.data);
   } catch (error) {
-    console.error('Error saving secret to file:', error);
+    console.error('Failed to create webhook:', error);
+    throw error;
   }
+}
+
+export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
+  // TODO: Change this before testing
+  // const installationId = "46623201"
+  // const octokit = await app.getInstallationOctokit(installationId);
+  const octokit = await app.getInstallationOctokit(LP_REPO_ID);
+
+  const [owner, repo] = extractOwnerAndRepo(repoUrl);
+
+  const PK_REPO = DB_KEY.ORG(LP_ORG_NAME);
+  const SK_REPO = DB_KEY.REPO(repo);
+
+  const PK_CHANNEL = DB_KEY.SERVER(GUILD_ID);
+  const SK_CHANNEL = DB_KEY.CHANNEL(channelId);
+
+  // Remove from repo partition
+  try {
+    const result = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
+    if (result == null || result["subscribers"][channelId] == null) {
+      // No existing subscription, return error
+      console.log("Not a subscriber");
+      return -1;
+    } else {
+      // Found subscription, deleting
+      delete result.PK;
+      delete result.SK;
+
+      delete result['subscribers'][channelId];
+
+      if (Object.keys(result['subscribers']).length == 0) {
+        // No more subscribers for this repo, delete repo record
+        console.log("No more subscribers for this repo, delete repo record");
+        try {
+          await dbHandler.deleteRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+        } catch (error) {
+          console.error("Error deleting record:", error);
+          throw error;
+        }
+      } else {
+        // Other subscribers exist, update the repo record
+        console.log("Other subscribers exist, update the repo record");
+        // Convert to DB record
+        const dbRecord = marshall(result);
+
+        try {
+          await dbHandler.updateRecord(TABLE_NAME, PK_REPO, SK_REPO, dbRecord);
+        } catch (error) {
+          console.error("Error updating record:", error);
+          throw error;
+        }
+      }
+
+      // Remove from channel partition
+      try {
+        const result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+
+        delete result.PK;
+        delete result.SK;
+
+        delete result['subscribed'][repo];
+
+        if (Object.keys(result['subscribed']).length == 0) {
+          // No more repos subscribed for this channel, delete channel record
+          console.log("No more repos subscribed for this channel, delete channel record");
+          try {
+            await dbHandler.deleteRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+          } catch (error) {
+            console.error("Error deleting record:", error);
+            throw error;
+          }
+        } else {
+          // Other subscriptions left, only update the channel record
+          console.log("Other subscriptions left, only update the channel record");
+          // Convert to DB record
+          const dbRecord = marshall(result);
+
+          try {
+            await dbHandler.updateRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+          } catch (error) {
+            console.error("Error updating record:", error);
+            throw error;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching record:", error);
+    throw error;
+  }
+
+  return 1;
 }
