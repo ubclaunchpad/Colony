@@ -383,7 +383,7 @@ export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
         // No more subscribers for this repo, delete repo record
         console.log("No more subscribers for this repo, delete repo record");
         try {
-          await dbHandler.deleteRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+          await dbHandler.deleteRecord(TABLE_NAME, PK_REPO, SK_REPO);
         } catch (error) {
           console.error("Error deleting record:", error);
           throw error;
