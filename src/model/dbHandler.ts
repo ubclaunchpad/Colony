@@ -239,8 +239,12 @@ export class DbHandler {
       const command = new UpdateItemCommand({
         TableName: tableName,
         Key: {
-          PK: PK,
-          SK: SK,
+          PK: {
+            S: PK
+          },
+          SK: {
+            S: SK
+          },
         },
         UpdateExpression: updateExpression,
         ExpressionAttributeNames: attributeNames,

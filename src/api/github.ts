@@ -1,89 +1,35 @@
-import Koa from 'koa';
 import Router from "@koa/router";
-import { createHmac } from 'crypto';
-import { promises as fs } from 'fs';
 import { sendToDiscordChannel } from "../app.js";
 import dotenv from "dotenv";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import path from 'path';
+import { dbHandler } from "../model/dbHandler.js";
+import { TABLE_NAME, DB_KEY } from "../util/github.js";
 
 dotenv.config();
 
 const router = new Router();
 
-// TODO: change this
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const filePath = path.join(__dirname, process.env.GITHUB_SUB_FILE_PATH);
+const LP_ORG_NAME = process.env.LP_ORG_NAME;
+const GUILD_ID = process.env.GUILD_ID;
 
-interface SecretInfo {
-    webhookSecret: string;
-    channelId: string;
-}
-
-router.post("/webhook/:channelId/:owner/:repo", async (ctx) => {
-    let webhookSecret = "";
-    const channelId = ctx.params.channelId;
-    const ownerName = ctx.params.owner;
-    const repoName = ctx.params.repo;
-
-    console.log("PR notification receieved!", channelId);
-
-    // Find the corresponding webhook secret
-    try {
-        const fileContents = await fs.readFile(filePath, 'utf8');
-        let secretInfos;
-
-        if (fileContents && typeof fileContents === 'string' && fileContents.trim()) {
-            // File is not empty, parse the JSON
-            secretInfos = JSON.parse(fileContents) as SecretInfo[];
-        } else {
-            // File is empty, initialize to an empty array
-            secretInfos = [];
-        }
-
-        const secretInfo = secretInfos.find(info =>
-            (info.channelId === channelId && info.ownerName === ownerName && info.repoName === repoName));
-
-        if (secretInfo) {
-            webhookSecret = secretInfo.webhookSecret;
-
-            // Verify with the saved webhook secret
-            if (!verifySignature(ctx, webhookSecret)) {
-                ctx.status = 401;
-                ctx.body = 'Invalid signature';
-                return;
-            }
-        } else {
-            ctx.status = 404;
-            ctx.body = 'Channel ID not found';
-            return;
-        }
-    } catch (error) {
-        console.error('Error reading from the file:', error);
-        ctx.status = 500;
-        ctx.body = 'Internal Server Error';
-        return;
-    }
-
+router.post("/webhook", async (ctx) => {
     // Process the webhook event
     const event = ctx.request.headers['x-github-event'];
-    const payload = ctx.request.body;
+    const payload = ctx.request.body as any;
 
     if (event === 'pull_request') {
-        // Handle pull request event
-        handlePullRequestEvent(payload, channelId);
+        console.log('PR event receieved!');
+        // Fetch all subscribed channels
+        const channels = await fetchChannels(payload.repository.name, event);
+        // Extract PR messages
+        channels.forEach(channelId => extractPRInfo(payload, channelId));
+    } else if (event === 'issues') {
+        console.log('Issue event receieved!');
+        // TODO: fill in this
     }
-
-    ctx.status = 200;
-    ctx.body = 'Event received';
     return;
 });
 
-function handlePullRequestEvent(payload: any, channelId: string) {
-    console.log('Pull Request Created!');
-
+function extractPRInfo(payload: any, channelId: string) {
     // Extract necessary information from the pull request event
     const pr = payload.pull_request;
     const prTitle = pr.title;
@@ -98,12 +44,21 @@ function handlePullRequestEvent(payload: any, channelId: string) {
     sendToDiscordChannel(message, channelId);
 }
 
-// Function to verify the webhook signature
-function verifySignature(ctx: Koa.ParameterizedContext, webhookSecret: string): boolean {
-    const signature = ctx.request.headers['x-hub-signature-256'] as string;
-    const hmac = createHmac('sha256', webhookSecret);
-    const digest = 'sha256=' + hmac.update(JSON.stringify(ctx.request.body)).digest('hex');
-    return signature === digest;
+async function fetchChannels(repoName: string, eventType: string) {
+    const PK_REPO = DB_KEY.ORG(LP_ORG_NAME);
+    const SK_REPO = DB_KEY.REPO(repoName);
+
+    try {
+        const record = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
+        console.log("record: ", record);
+        const channels = Object.keys(record.subscribers)
+            .filter(key => record.subscribers[key].events.includes("PR")) // Filter IDs where events include "PR"
+            .map(key => record.subscribers[key].channelid);
+        return channels;
+    } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+    }
 }
 
 export default router;

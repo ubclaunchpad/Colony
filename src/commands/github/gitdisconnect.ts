@@ -27,12 +27,19 @@ import {
     const channelId = interaction.channelId;
   
     // Call the helper to set up the notifications with the github app
-    await unsubscribeToGitHub(repoLink, channelId);
+    const result = await unsubscribeToGitHub(repoLink, channelId);
   
-    await interaction.reply({
+    if (result === -1) {
+      await interaction.reply({
+        content:
+            "You are not a subscriber of this repository!",
+      });
+    } else {
+      await interaction.reply({
         content:
             "You have unsubscribed to this repository!",
-    });
+      });
+    }
   }
   
   // Function to validate the GitHub repository link
