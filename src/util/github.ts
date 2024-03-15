@@ -26,7 +26,7 @@ const GUILD_ID = process.env.GUILD_ID;
 // TODO: check this before testing
 const webhookURL = "https://colony-production.up.railway.app/webhook/";
 // For local test with ngrok
-// const webhookURL = "https://02d6-128-189-176-180.ngrok-free.app/webhook/";
+// const webhookURL = "https://ccbb-128-189-176-180.ngrok-free.app/webhook/";
 export const TABLE_NAME = "github_events";
 
 // TODO: Edit the list of events for the webhook to listen on here
@@ -89,9 +89,6 @@ export async function initiateDeviceFlow() {
 }
 
 export async function connectToGitHub(repoUrl: string, channelId: string, eventType: string) {
-  // TODO: check this before testing
-  // const installationId = "46623201";
-  // const octokit = await app.getInstallationOctokit(installationId);
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
   
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
@@ -100,6 +97,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
   const error = await findExistingWebhook(LP_ORG_NAME, octokit, webhookURL).then(found => {
     if (found) {
       console.log('Webhook already exists.');
+      return null;
     } else {
       console.log('No existing webhook found.');
       // Create a new webhook for the whole orgnization
@@ -352,9 +350,6 @@ async function createOrgWebhook(org: string, octokit: Octokit, webhookConfig: { 
 }
 
 export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
-  // TODO: Change this before testing
-  // const installationId = "46623201"
-  // const octokit = await app.getInstallationOctokit(installationId);
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
 
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
@@ -383,7 +378,7 @@ export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
         // No more subscribers for this repo, delete repo record
         console.log("No more subscribers for this repo, delete repo record");
         try {
-          await dbHandler.deleteRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+          await dbHandler.deleteRecord(TABLE_NAME, PK_REPO, SK_REPO);
         } catch (error) {
           console.error("Error deleting record:", error);
           throw error;

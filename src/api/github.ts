@@ -36,9 +36,12 @@ function extractPRInfo(payload: any, channelId: string) {
     const prUrl = pr.html_url;
     const prAction = payload.action; // e.g., 'opened', 'closed', 'reopened'
     const repositoryName = payload.repository.full_name;
+    const prSender = pr.user.login;
+    const prHead = pr.head.ref;
+    const prBase = pr.base.ref;
 
     // Create a message to send
-    const message = `Pull Request in repository ${repositoryName} has been ${prAction}: ${prTitle}\n${prUrl}`;
+    const message = `Pull Request in repository ${repositoryName} has been ${prAction} by ${prSender}.\nTitle: ${prTitle}\nFrom ${prHead} into ${prBase}.\n${prUrl}`;
 
     // Send the message to a specific Discord channel
     sendToDiscordChannel(message, channelId);
