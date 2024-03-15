@@ -283,7 +283,8 @@ export function sendToDiscordChannel(message: string, channelId: string) {
   if (channel) {
       channel.send(message).catch(console.error);
   } else {
-      console.error(`Channel with ID ${CHANNEL_ID} not found`);
+      console.error(`Channel with ID ${channelId} not found`);
+      return -1;
   }
 }
 

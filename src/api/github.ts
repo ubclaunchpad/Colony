@@ -2,7 +2,7 @@ import Router from "@koa/router";
 import { sendToDiscordChannel } from "../app.js";
 import dotenv from "dotenv";
 import { dbHandler } from "../model/dbHandler.js";
-import { TABLE_NAME, DB_KEY } from "../util/github.js";
+import { TABLE_NAME, DB_KEY, unsubscribeToGitHub } from "../util/github.js";
 
 dotenv.config();
 
@@ -39,12 +39,17 @@ function extractPRInfo(payload: any, channelId: string) {
     const prSender = pr.user.login;
     const prHead = pr.head.ref;
     const prBase = pr.base.ref;
+    const repoLink = payload.repository.html_url;
 
     // Create a message to send
     const message = `Pull Request in repository ${repositoryName} has been ${prAction} by ${prSender}.\nTitle: ${prTitle}\nFrom ${prHead} into ${prBase}.\n${prUrl}`;
 
     // Send the message to a specific Discord channel
-    sendToDiscordChannel(message, channelId);
+    const result = sendToDiscordChannel(message, channelId);
+
+    if (result === -1) {
+        unsubscribeToGitHub(repoLink, channelId);
+    }
 }
 
 async function fetchChannels(repoName: string, eventType: string) {
@@ -53,7 +58,6 @@ async function fetchChannels(repoName: string, eventType: string) {
 
     try {
         const record = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
-        console.log("record: ", record);
         const channels = Object.keys(record.subscribers)
             .filter(key => record.subscribers[key].events.includes("PR")) // Filter IDs where events include "PR"
             .map(key => record.subscribers[key].channelid);
