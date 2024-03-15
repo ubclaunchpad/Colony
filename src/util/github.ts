@@ -13,10 +13,10 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 const appId = process.env.GH_APP_ID;
 // TODO: check this before testing
 // For local test in James' branch
-const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+// const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
+// const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
-// const privateKey = process.env.GH_KEY;
+const privateKey = process.env.GH_KEY;
 
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
@@ -24,10 +24,10 @@ const LP_ORG_NAME = process.env.LP_ORG_NAME;
 const GUILD_ID = process.env.GUILD_ID;
 
 // TODO: check this before testing
-// const webhookURL = "https://colony-production.up.railway.app/webhook/";
+const webhookURL = "https://colony-production.up.railway.app/webhook/";
 // For local test with ngrok
-const webhookURL = "https://522d-128-189-176-180.ngrok-free.app/webhook/";
-export const TABLE_NAME = "github_events_test";
+// const webhookURL = "https://522d-128-189-176-180.ngrok-free.app/webhook/";
+export const TABLE_NAME = "github_events";
 
 // TODO: Edit the list of events for the webhook to listen on here
 const EVENTS = ['pull_request', 'issues'];
