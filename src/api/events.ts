@@ -145,23 +145,41 @@ router.post("/guilds/:gid/events/:id/attendees", async (ctx) => {
   }
 });
 
+enum AttendeeQueryTypeEnum {
+  DISCORD_ID = 'discordId',
+  EMAIL = 'email'
+}
+
 // POST /events/{id}/attendees/query
 router.post("/guilds/:gid/events/:id/attendees/query", async (ctx) => {
   const eventId = ctx.params.id;
-  const attendees = ctx.request.body as { attendees: { email: string }[] };
+  const attendees = ctx.request.body as { attendees: { email?: string, discordId?: string }[] };
+  const queryType = ctx.request.query.queryType as AttendeeQueryTypeEnum;
 
   const PK = DB_KEY.EVENT(eventId);
   let results: IAttendee[] = [];
 
   try {
     for (const attendee of attendees.attendees) {
-      const SK = DB_KEY.ATTENDEE(attendee.email);
-      const result = (await dbHandler.fetchRecord(
-        TABLE_NAME,
-        PK,
-        SK,
-      )) as IAttendee;
-      results.push(result);
+      if (queryType === AttendeeQueryTypeEnum.DISCORD_ID) {
+        const SK = attendee.discordId;
+        const result = (await dbHandler.fetchRecordsByAttendeeDiscordIdIndex(
+          TABLE_NAME,
+          PK,
+          SK,
+        )) as IAttendee[];
+        result.map((attendee: IAttendee) => {
+          results.push(attendee);
+        })
+      } else {
+        const SK = DB_KEY.ATTENDEE(attendee.email);
+        const result = (await dbHandler.fetchRecord(
+          TABLE_NAME,
+          PK,
+          SK,
+        )) as IAttendee;
+        results.push(result);
+      }
     }
     ctx.body = results;
   } catch (error) {
