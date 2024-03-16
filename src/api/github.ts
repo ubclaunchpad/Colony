@@ -11,6 +11,10 @@ const router = new Router();
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
 const GUILD_ID = process.env.GUILD_ID;
 
+// TODO: Add more cases if needed for new message.
+// All PR event actions are available here: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
+const KEYACTIONS = ["opened", "closed", "reopened", "assigned", "unassigned"];
+
 router.post("/webhook", async (ctx) => {
     // Process the webhook event
     const event = ctx.request.headers['x-github-event'];
@@ -41,8 +45,16 @@ function extractPRInfo(payload: any, channelId: string) {
     const prBase = pr.base.ref;
     const repoLink = payload.repository.html_url;
 
+    if (!KEYACTIONS.includes(prAction)) {
+        return;
+    }
+
+    // TODO: Need to change the format of the message based on specific types of action, such as assigned
     // Create a message to send
-    const message = `Pull Request in repository ${repositoryName} has been ${prAction} by ${prSender}.\nTitle: ${prTitle}\nFrom ${prHead} into ${prBase}.\n${prUrl}`;
+    const message = `Pull Request in repository ${repositoryName} has been ${prAction} by ${prSender}.\n
+                    Title: ${prTitle}\n
+                    From ${prHead} into ${prBase}.\n
+                    ${prUrl}`;
 
     // Send the message to a specific Discord channel
     const result = sendToDiscordChannel(message, channelId);
