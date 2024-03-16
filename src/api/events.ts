@@ -163,7 +163,7 @@ router.post("/guilds/:gid/events/:id/attendees/query", async (ctx) => {
     for (const attendee of attendees.attendees) {
       if (queryType === AttendeeQueryTypeEnum.DISCORD_ID) {
         const SK = attendee.discordId;
-        const result = (await dbHandler.fetchRecordsByAttendeeDiscordIdIndex(
+        const result = (await dbHandler.fetchRecordsByPKAndAttendeeDiscordId(
           TABLE_NAME,
           PK,
           SK,

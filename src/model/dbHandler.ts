@@ -144,7 +144,7 @@ export class DbHandler {
     }
   }
 
-  async fetchRecordsByAttendeeDiscordIdIndex(tableName, PK, attendeeDiscordId) {
+  async fetchRecordsByPKAndAttendeeDiscordId(tableName, PK, attendeeDiscordId) {
     try {
       const command = new QueryCommand({
         TableName: tableName,
