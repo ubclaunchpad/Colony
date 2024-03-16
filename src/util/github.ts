@@ -10,8 +10,6 @@ import { promises as promisefs } from 'fs';
 import { dbHandler } from "../model/dbHandler.js";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
-const appId = process.env.GH_APP_ID;
-
 // TODO: check these before testing
 // Uncomment these for local test
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
@@ -25,6 +23,7 @@ const privateKey = process.env.GH_KEY;
 const webhookURL = "https://colony-production.up.railway.app/webhook/";
 export const TABLE_NAME = "github_events";
 
+const appId = process.env.GH_APP_ID;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
