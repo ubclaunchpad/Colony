@@ -10,24 +10,24 @@ import { promises as promisefs } from 'fs';
 import { dbHandler } from "../model/dbHandler.js";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
-const appId = process.env.GH_APP_ID;
-// TODO: check this before testing
-// For local test in James' branch
+// TODO: check these before testing
+// Uncomment these for local test
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+// const webhookURL = "https://6ec1-206-87-192-164.ngrok-free.app/webhook/";
+// export const TABLE_NAME = "github_events_test";
 
+// TODO: check these before testing
+// Uncomment these for deployment
 const privateKey = process.env.GH_KEY;
+const webhookURL = "https://colony-production.up.railway.app/webhook/";
+export const TABLE_NAME = "github_events";
 
+const appId = process.env.GH_APP_ID;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
 const LP_REPO_ID = process.env.LP_REPO_ID;
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
 const GUILD_ID = process.env.GUILD_ID;
-
-// TODO: check this before testing
-const webhookURL = "https://colony-production.up.railway.app/webhook/";
-// For local test with ngrok
-// const webhookURL = "https://ccbb-128-189-176-180.ngrok-free.app/webhook/";
-export const TABLE_NAME = "github_events";
 
 // TODO: Edit the list of events for the webhook to listen on here
 const EVENTS = ['pull_request', 'issues'];
@@ -342,7 +342,7 @@ async function createOrgWebhook(org: string, octokit: Octokit, webhookConfig: { 
       }
     });
 
-    console.log('Webhook created successfully:', response.data);
+    console.log('Webhook created successfully');
   } catch (error) {
     console.error('Failed to create webhook:', error);
     throw error;
