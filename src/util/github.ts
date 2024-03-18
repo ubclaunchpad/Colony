@@ -14,7 +14,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 // Uncomment these for local test
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-// const webhookURL = "https://c6c6-206-87-196-40.ngrok-free.app/webhook/";
+// const webhookURL = "https://6ec1-206-87-192-164.ngrok-free.app/webhook/";
 // export const TABLE_NAME = "github_events_test";
 
 // TODO: check these before testing

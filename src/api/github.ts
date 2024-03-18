@@ -3,6 +3,7 @@ import { sendToDiscordChannel } from "../app.js";
 import dotenv from "dotenv";
 import { dbHandler } from "../model/dbHandler.js";
 import { TABLE_NAME, DB_KEY, unsubscribeToGitHub } from "../util/github.js";
+import { EmbedBuilder } from 'discord.js';
 
 dotenv.config();
 
@@ -41,20 +42,38 @@ function extractPRInfo(payload: any, channelId: string) {
     const prAction = payload.action; // e.g., 'opened', 'closed', 'reopened'
     const repositoryName = payload.repository.full_name;
     const prSender = pr.user.login;
+    const prSenderAvatar = pr.user.avatar_url;
+    const prSenderUrl = pr.user.url;
     const prHead = pr.head.ref;
     const prBase = pr.base.ref;
     const repoLink = payload.repository.html_url;
+    const prAssignee = pr.assignee ? pr.assignees : "None";
+    const prBody = pr.body;
 
     if (!KEYACTIONS.includes(prAction)) {
         return;
     }
 
-    // TODO: Need to change the format of the message based on specific types of action, such as assigned
-    // Create a message to send
-    const message = `Pull Request in repository ${repositoryName} has been ${prAction} by ${prSender}.\n
-                    Title: ${prTitle}\n
-                    From ${prHead} into ${prBase}.\n
-                    ${prUrl}`;
+    // Create an embed message to send
+    const embed = new EmbedBuilder()
+                .setColor(0x0099ff)
+                .setTitle(prTitle)
+                .setURL(prUrl)
+                .setAuthor({ name: prSender, iconURL: prSenderAvatar, url: prSenderUrl })
+                .setDescription('Click on the title above to see the pull request')
+                .setThumbnail('https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png')
+                .addFields(
+                    { name: 'Event Type', value: "Pull Request", inline: true },
+                    { name: 'Action', value: prAction, inline: true },
+                    { name: 'Repository', value: repositoryName },
+                    { name: 'Body', value: prBody },
+                    { name: 'Assignees', value: prAssignee.map(user => user.login).join(', ') },
+                    { name: 'Head Branch', value: prHead, inline: true },
+                    { name: 'Base Branch', value: prBase, inline: true },
+                )
+                .setTimestamp();
+
+    const message = {embeds: [embed]};
 
     // Send the message to a specific Discord channel
     const result = sendToDiscordChannel(message, channelId);
@@ -75,8 +94,12 @@ async function fetchChannels(repoName: string, eventType: string) {
             .map(key => record.subscribers[key].channelid);
         return channels;
     } catch (error) {
-        console.error("Error fetching record:", error);
-        throw error;
+        if (error === "TypeError: Cannot read properties of null (reading 'subscribers')") {
+            return;
+        } else {
+            console.error("Error fetching record:", error);
+            throw error;
+        }
     }
 }
 

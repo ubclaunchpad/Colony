@@ -278,7 +278,7 @@ client.on(Events.GuildScheduledEventDelete, async (guildScheduledEvent) => {
   await guildScheduledEventDelete(guildScheduledEvent, server);
 });
 
-export function sendToDiscordChannel(message: string, channelId: string) {
+export function sendToDiscordChannel(message: any, channelId: string) {
   const channel = client.channels.cache.get(channelId) as Discord.TextChannel;
   if (channel) {
       channel.send(message).catch(console.error);
