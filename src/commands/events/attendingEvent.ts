@@ -9,14 +9,29 @@ dotenv.config();
 
 const GUILD_ID = process.env.GUILD_ID;
 
+export enum AttendingEventSubcommands {
+  DISCORD_ID = 'discord-id',
+  EMAIL = 'email'
+};
+
 const data = new SlashCommandBuilder()
   .setName("event-check-in")
   .setDescription("Checking for a Launch Pad event")
-  .addStringOption((option) =>
-    option
-      .setName("email")
-      .setDescription("The email you used to RSVP to the event")
-      .setRequired(true),
+  .addSubcommand(subcommand =>
+		subcommand
+      .setName(AttendingEventSubcommands.DISCORD_ID)
+      .setDescription("Check-in using your Discord ID")
+  )
+	.addSubcommand(subcommand =>
+		subcommand
+      .setName(AttendingEventSubcommands.EMAIL)
+      .setDescription("Check-in using your email")
+      .addStringOption((option) =>
+        option
+          .setName("email")
+          .setDescription("The email you used to RSVP to the event")
+          .setRequired(true)
+      )
   );
 
 async function execute(interaction) {
@@ -58,6 +73,7 @@ async function execute(interaction) {
           JSON.stringify({
             eventId: event.id,
             email: interaction.options.getString("email"),
+            discordId: interaction.member.user.id,
           }),
         ),
     );

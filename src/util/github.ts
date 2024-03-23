@@ -90,7 +90,7 @@ export async function initiateDeviceFlow() {
 
 export async function connectToGitHub(repoUrl: string, channelId: string, eventType: string) {
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
-  
+
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
   // check existing webhook or not, if no, create one
@@ -149,7 +149,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
           }
         }
       };
-      
+
       // Convert to DB record
       const dbRecord = marshall(record);
 
@@ -176,7 +176,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
               }
             }
           };
-          
+
           // Convert to DB record
           const dbRecord = marshall(record);
 
@@ -252,7 +252,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
               }
             }
           };
-          
+
           // Convert to DB record
           const dbRecord = marshall(record);
 
