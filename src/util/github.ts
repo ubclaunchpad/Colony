@@ -14,7 +14,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 // Uncomment these for local test
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-// const webhookURL = "https://6ec1-206-87-192-164.ngrok-free.app/webhook/";
+// const webhookURL = "https://accd-128-189-176-180.ngrok-free.app/webhook/";
 // export const TABLE_NAME = "github_events_test";
 
 // TODO: check these before testing
@@ -289,8 +289,51 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
         console.error("Error fetching record:", error);
         throw error;
       }
+    } else if (!result["subscribers"][channelId][events].includes(eventType)) {
+      // TODO: Test this case
+      // Channel has subscribed to other events, add new event type to exisisting channel record
+      console.log("Channel has subscribed to other events, add new event type to exisisting channel record");
+      delete result.PK;
+      delete result.SK;
+
+      result['subscribers'][channelId][events].push(eventType);
+
+      // Convert to DB record
+      const dbRecord = marshall(result);
+
+      try {
+        await dbHandler.updateRecord(TABLE_NAME, PK_REPO, SK_REPO, dbRecord);
+      } catch (error) {
+        console.error("Error updating record:", error);
+        throw error;
+      }
+
+      // Add in channels partition
+      try {
+        const result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+        
+        console.log("Add new event type to existing repo record");
+        // Add new event type to existing repo record
+
+        delete result.PK;
+        delete result.SK;
+
+        result['subscribed'][repo][events].push(eventType);
+
+        // Convert to DB record
+        const dbRecord = marshall(result);
+
+        try {
+          await dbHandler.updateRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL, dbRecord);
+        } catch (error) {
+          console.error("Error updating record:", error);
+          throw error;
+        }
+      } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+      }
     } else {
-      // TODO: one more case of exisiting subscription from the same channel and for the same repo, but missing requested event
       // Existing subscription
       console.log("Duplicated subscription found")
       return "1";

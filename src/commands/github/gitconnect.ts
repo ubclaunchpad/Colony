@@ -11,6 +11,7 @@ import {
 // Define choices for the fixed option list
 const optionChoices: APIApplicationCommandOptionChoice<string>[] = [
   { name: 'Pull Requests', value: 'PR' },
+  // TODO: Uncomment this only when testing it or after testing it
   // { name: 'Issues', value: 'Issue' },
 ];
 
