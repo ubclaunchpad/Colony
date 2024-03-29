@@ -65,11 +65,14 @@ async function execute(interaction) {
   // console.log(parsedData);
   const body = { attendees: [] };
   parsedData.forEach((row) => {
-    body.attendees.push({
-      email: row.email || "",
-      name: row.name || row.email,
-      attendeeStatus: row.attendeeStatus || "GOING",
-    });
+    if (row.email || row.discordId) {
+      body.attendees.push({
+        email: row.email || "",
+        name: row.name || row.email,
+        attendeeStatus: row.attendeeStatus || "GOING",
+        discordId: row.discordId
+      });
+    }
   });
 
   console.log(

@@ -7,6 +7,7 @@ import {
   DeleteItemCommand,
   BatchWriteItemCommand,
   UpdateItemCommand,
+  QueryCommand,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
@@ -134,6 +135,35 @@ export class DbHandler {
 
       if (response.Item) {
         return unmarshall(response.Item);
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("Error getting item:", error);
+      throw error;
+    }
+  }
+
+  async fetchRecordsByPKAndAttendeeDiscordId(tableName, PK, attendeeDiscordId) {
+    try {
+      const command = new QueryCommand({
+        TableName: tableName,
+        IndexName: "PK-discordId-index",
+        KeyConditionExpression: "PK = :PK AND discordId = :discordId",
+        ExpressionAttributeValues: {
+          ":PK": {
+            S: PK
+          },
+          ":discordId": {
+            S: attendeeDiscordId
+          },
+        },
+      });
+
+      const response = await this.client.send(command);
+
+      if (response.Items) {
+        return response.Items.map((item) => unmarshall(item));
       } else {
         return null;
       }
