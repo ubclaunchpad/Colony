@@ -6,6 +6,7 @@ import {
     unsubscribeToGitHub
   } from "../../util/github.js"
   
+  // TODO: Need to include event type option for unsubscribing
   const data = new SlashCommandBuilder()
     .setName("gitdisconnect")
     .setDescription("Disconnect to the github repository via link")
