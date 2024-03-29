@@ -45,7 +45,7 @@ type AttendeeStatus =
   | "CHECKED_IN";
 
 type AttendeeQuery = {
-  attendees: { email: String }[];
+  attendees: { email?: String, discordId?: String }[];
 };
 
 export {
