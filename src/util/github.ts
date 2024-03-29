@@ -12,16 +12,16 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 // TODO: check these before testing
 // Uncomment these for local test
-const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-const webhookURL = "https://accd-128-189-176-180.ngrok-free.app/webhook/";
-export const TABLE_NAME = "github_events_test";
+// const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
+// const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+// const webhookURL = "https://accd-128-189-176-180.ngrok-free.app/webhook/";
+// export const TABLE_NAME = "github_events_test";
 
 // TODO: check these before testing
 // Uncomment these for deployment
-// const privateKey = process.env.GH_KEY;
-// const webhookURL = "https://colony-production.up.railway.app/webhook/";
-// export const TABLE_NAME = "github_events";
+const privateKey = process.env.GH_KEY;
+const webhookURL = "https://colony-production.up.railway.app/webhook/";
+export const TABLE_NAME = "github_events";
 
 const appId = process.env.GH_APP_ID;
 const LP_GITHUB_APP_CLIENT_ID = process.env.LP_GITHUB_APP_CLIENT_ID;
