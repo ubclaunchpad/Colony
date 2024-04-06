@@ -11,6 +11,8 @@ import {
   guildScheduledEventUpdate,
   guildScheduledEventDelete,
 } from "./util/eventHandling.js";
+import { AttendingEventSubcommands } from "./commands/events/attendingEvent.js";
+import { AttendeeQueryTypeEnum } from "./api/events.js";
 
 dotenv.config();
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -217,20 +219,35 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   } else if (interaction.isAnySelectMenu()) {
     if (interaction.customId === "event-check-in") {
-      const { eventId, email, name } = JSON.parse(interaction.values);
+      const subcommandName: AttendingEventSubcommands = interaction.message.interaction.commandName.split(' ')[1];
+      let res;
 
-      const res = await fetch(
-        `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      if (subcommandName === AttendingEventSubcommands.DISCORD_ID) {
+        const { eventId, discordId } = JSON.parse(interaction.values);
+        res = await fetch(
+          `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query?queryType=${AttendeeQueryTypeEnum.DISCORD_ID}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ attendees: [{ discordId: discordId }] }),
           },
-          body: JSON.stringify({ attendees: [{ email: email }] }),
-        },
-      ).then((res) => res.json());
+        ).then((res) => res.json());
 
-      // console.log(`${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`);
+      } else {
+        const { eventId, email } = JSON.parse(interaction.values);
+        res = await fetch(
+          `${API_URL}/guilds/${GUILD_ID}/events/${eventId}/attendees/query`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ attendees: [{ email: email }] }),
+          },
+        ).then((res) => res.json());
+      }
 
       if (res.length === 0 || res[0] === null) {
         await interaction.update({
