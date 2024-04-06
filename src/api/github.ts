@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { dbHandler } from "../model/dbHandler.js";
 import { TABLE_NAME, DB_KEY, unsubscribeToGitHub } from "../util/github.js";
 import { EmbedBuilder } from 'discord.js';
+import { privateEncrypt } from "crypto";
 
 dotenv.config();
 
@@ -11,6 +12,10 @@ const router = new Router();
 
 const LP_ORG_NAME = process.env.LP_ORG_NAME;
 const GUILD_ID = process.env.GUILD_ID;
+
+// TODO: Ugly solution for unsubscribing channels if channels are deleted, to reuse the unsubscribeToGitHub function.
+// Need to add values in DB here if there are new events added.
+const EVENTS = ["PR", "Issue"];
 
 // TODO: Add more cases if needed for new message.
 // All PR event actions are available here: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
@@ -29,7 +34,6 @@ router.post("/webhook", async (ctx) => {
         channels.forEach(channelId => extractPRInfo(payload, channelId));
     } else if (event === 'issues') {
         console.log('Issue event receieved!');
-        // TODO: test this
         // Fetch all subscribed channels
         const channels = await fetchChannels(payload.repository.name, "Issue");
         // Extract Issue messages
@@ -52,7 +56,7 @@ function extractPRInfo(payload: any, channelId: string) {
     const prBase = pr.base.ref;
     const repoLink = payload.repository.html_url;
     const prAssignee = pr.assignee ? pr.assignees.map(user => user.login).join(', ') : "None";
-    const prBody = pr.body;
+    const prBody = pr.body ? pr.body : "None";
 
     if (!KEYACTIONS.includes(prAction)) {
         return;
@@ -83,7 +87,7 @@ function extractPRInfo(payload: any, channelId: string) {
     const result = sendToDiscordChannel(message, channelId);
 
     if (result === -1) {
-        unsubscribeToGitHub(repoLink, channelId);
+        EVENTS.forEach(event => unsubscribeToGitHub(repoLink, channelId, event));
     }
 }
 
@@ -98,8 +102,8 @@ function extractIssueInfo(payload: any, channelId: string) {
     const issueSenderAvatar = issue.user.avatar_url;
     const issueSenderUrl = issue.user.url;
     const repoLink = payload.repository.html_url;
-    const issueAssignee = issue.assignee ? issue.assignees : "None";
-    const issueBody = issue.body;
+    const issueAssignee = issue.assignee ? issue.assignees.map(user => user.login).join(', ') : "None";
+    const issueBody = issue.body ? issue.body : "None";
 
     if (!KEYACTIONS.includes(issueAction)) {
         return;
@@ -114,11 +118,11 @@ function extractIssueInfo(payload: any, channelId: string) {
                 .setDescription('Click on the title above to see the issue')
                 .setThumbnail('https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png')
                 .addFields(
-                    { name: 'Event Type', value: "Pull Request", inline: true },
+                    { name: 'Event Type', value: "Issue", inline: true },
                     { name: 'Action', value: issueAction, inline: true },
                     { name: 'Repository', value: repositoryName },
                     { name: 'Body', value: issueBody },
-                    { name: 'Assignees', value: issueAssignee.map(user => user.login).join(', ') },
+                    { name: 'Assignees', value: issueAssignee },
                 )
                 .setTimestamp();
 
@@ -128,7 +132,7 @@ function extractIssueInfo(payload: any, channelId: string) {
     const result = sendToDiscordChannel(message, channelId);
 
     if (result === -1) {
-        unsubscribeToGitHub(repoLink, channelId);
+        EVENTS.forEach(event => unsubscribeToGitHub(repoLink, channelId, event));
     }
 }
 
