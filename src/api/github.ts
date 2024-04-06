@@ -51,7 +51,7 @@ function extractPRInfo(payload: any, channelId: string) {
     const repositoryName = payload.repository.full_name;
     const prSender = pr.user.login;
     const prSenderAvatar = pr.user.avatar_url;
-    const prSenderUrl = pr.user.url;
+    const prSenderUrl = pr.user.html_url;
     const prHead = pr.head.ref;
     const prBase = pr.base.ref;
     const repoLink = payload.repository.html_url;
@@ -100,7 +100,7 @@ function extractIssueInfo(payload: any, channelId: string) {
     const repositoryName = payload.repository.full_name;
     const issueSender = issue.user.login;
     const issueSenderAvatar = issue.user.avatar_url;
-    const issueSenderUrl = issue.user.url;
+    const issueSenderUrl = issue.user.html_url;
     const repoLink = payload.repository.html_url;
     const issueAssignee = issue.assignee ? issue.assignees.map(user => user.login).join(', ') : "None";
     const issueBody = issue.body ? issue.body : "None";
