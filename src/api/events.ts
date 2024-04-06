@@ -145,7 +145,7 @@ router.post("/guilds/:gid/events/:id/attendees", async (ctx) => {
   }
 });
 
-enum AttendeeQueryTypeEnum {
+export enum AttendeeQueryTypeEnum {
   DISCORD_ID = 'discordId',
   EMAIL = 'email'
 }

@@ -11,8 +11,7 @@ import {
 // Define choices for the fixed option list
 const optionChoices: APIApplicationCommandOptionChoice<string>[] = [
   { name: 'Pull Requests', value: 'PR' },
-  // TODO: Uncomment this only when testing it or after testing it
-  // { name: 'Issues', value: 'Issue' },
+  { name: 'Issues', value: 'Issue' },
 ];
 
 const data = new SlashCommandBuilder()
@@ -49,7 +48,7 @@ async function execute(interaction) {
   if (result === "1") {
     await interaction.reply({
       content:
-        "You have already subscribed to this repository!",
+        `You have already subscribed to this repository for ${eventType}!`,
     });
   } else if (result === "Error creating webhook") {
     await interaction.reply({
@@ -59,7 +58,7 @@ async function execute(interaction) {
   } else {
     await interaction.reply({
       content:
-        "You have subscribed to the github repository!",
+        `You have subscribed to the github repository for ${eventType}!`,
     });
   }
 }

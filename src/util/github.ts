@@ -14,7 +14,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 // Uncomment these for local test
 // const privateKeyPath = process.env.GH_PRIVATE_KEY_PATH;
 // const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-// const webhookURL = "https://accd-128-189-176-180.ngrok-free.app/webhook/";
+// const webhookURL = "https://5a41-128-189-176-180.ngrok-free.app/webhook/";
 // export const TABLE_NAME = "github_events_test";
 
 // TODO: check these before testing
@@ -90,7 +90,7 @@ export async function initiateDeviceFlow() {
 
 export async function connectToGitHub(repoUrl: string, channelId: string, eventType: string) {
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
-  
+
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
 
   // check existing webhook or not, if no, create one
@@ -149,7 +149,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
           }
         }
       };
-      
+
       // Convert to DB record
       const dbRecord = marshall(record);
 
@@ -176,7 +176,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
               }
             }
           };
-          
+
           // Convert to DB record
           const dbRecord = marshall(record);
 
@@ -252,7 +252,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
               }
             }
           };
-          
+
           // Convert to DB record
           const dbRecord = marshall(record);
 
@@ -289,14 +289,13 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
         console.error("Error fetching record:", error);
         throw error;
       }
-    } else if (!result["subscribers"][channelId][events].includes(eventType)) {
-      // TODO: Test this case
+    } else if (!result["subscribers"][channelId]["events"].includes(eventType)) {
       // Channel has subscribed to other events, add new event type to exisisting channel record
       console.log("Channel has subscribed to other events, add new event type to exisisting channel record");
       delete result.PK;
       delete result.SK;
 
-      result['subscribers'][channelId][events].push(eventType);
+      result['subscribers'][channelId]["events"].push(eventType);
 
       // Convert to DB record
       const dbRecord = marshall(result);
@@ -318,7 +317,7 @@ export async function connectToGitHub(repoUrl: string, channelId: string, eventT
         delete result.PK;
         delete result.SK;
 
-        result['subscribed'][repo][events].push(eventType);
+        result['subscribed'][repo]["events"].push(eventType);
 
         // Convert to DB record
         const dbRecord = marshall(result);
@@ -392,7 +391,7 @@ async function createOrgWebhook(org: string, octokit: Octokit, webhookConfig: { 
   }
 }
 
-export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
+export async function unsubscribeToGitHub(repoUrl: string, channelId: string, eventType: string) {
   const octokit = await app.getInstallationOctokit(LP_REPO_ID);
 
   const [owner, repo] = extractOwnerAndRepo(repoUrl);
@@ -405,7 +404,7 @@ export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
 
   // Remove from repo partition
   try {
-    const result = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
+    let result = await dbHandler.fetchRecord(TABLE_NAME, PK_REPO, SK_REPO);
     if (result == null || result["subscribers"][channelId] == null) {
       // No existing subscription, return error
       console.log("Not a subscriber");
@@ -415,7 +414,15 @@ export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
       delete result.PK;
       delete result.SK;
 
-      delete result['subscribers'][channelId];
+      if (Object.keys(result["subscribers"][channelId]["events"]).length > 1) {
+        // Other events subscribed, only remove target event
+        console.log("Other events subscribed, only remove target event");
+        result["subscribers"][channelId]["events"] = result["subscribers"][channelId]["events"].filter(item => item !== eventType);
+      } else {
+        // No more events remain, remove the whole channel entry in repo partition
+        console.log("No more events remain, remove the whole channel entry in repo partition");
+        delete result['subscribers'][channelId];
+      }
 
       if (Object.keys(result['subscribers']).length == 0) {
         // No more subscribers for this repo, delete repo record
@@ -442,13 +449,21 @@ export async function unsubscribeToGitHub(repoUrl: string, channelId: string) {
 
       // Remove from channel partition
       try {
-        const result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
+        let result = await dbHandler.fetchRecord(TABLE_NAME, PK_CHANNEL, SK_CHANNEL);
 
         delete result.PK;
         delete result.SK;
 
-        delete result['subscribed'][repo];
-
+        if (Object.keys(result['subscribed'][repo]["events"]).length > 1) {
+          // Other events subscribed, only remove target event
+          console.log("Other events subscribed, only remove target event");
+          result['subscribed'][repo]["events"] = result['subscribed'][repo]["events"].filter(item => item !== eventType);
+        } else {
+          // No more events remain, remove the whole repo entry in channel partition
+          console.log("No more events remain, remove the whole repo entry in channel partition");
+          delete result['subscribed'][repo];
+        }
+        
         if (Object.keys(result['subscribed']).length == 0) {
           // No more repos subscribed for this channel, delete channel record
           console.log("No more repos subscribed for this channel, delete channel record");
