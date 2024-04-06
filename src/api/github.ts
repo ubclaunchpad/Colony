@@ -56,7 +56,7 @@ function extractPRInfo(payload: any, channelId: string) {
     const prBase = pr.base.ref;
     const repoLink = payload.repository.html_url;
     const prAssignee = pr.assignee ? pr.assignees.map(user => user.login).join(', ') : "None";
-    const prBody = pr.body;
+    const prBody = pr.body ? pr.body : "None";
 
     if (!KEYACTIONS.includes(prAction)) {
         return;
