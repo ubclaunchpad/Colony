@@ -1,4 +1,4 @@
-import { Application, Router, Context } from "jsr:@oak/oak@17";
+import { Application, Router, Context } from "https://deno.land/x/oak/mod.ts";
 import { z } from "https://deno.land/x/zod/mod.ts";
 
 import {
