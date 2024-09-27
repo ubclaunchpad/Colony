@@ -60,7 +60,6 @@ export class DiscordServer {
     }
 
     const collectionRes = await this.guild!.members.fetch({ query: username, limit: 1 });
-    console.log(collectionRes);
     if (!collectionRes || collectionRes.size === 0) {
       throw new Error(`User ${username} not found in the server`);
     }

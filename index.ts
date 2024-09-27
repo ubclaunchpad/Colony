@@ -10,10 +10,10 @@ const app = new Hono()
 app.use(
   '/colony/*',
   cors({
-    origin: process.env.NODE_ENV === 'production' ? 'https://www.ubclaunchpad.com' : '*',
-    allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests'],
+    origin: process.env.NODE_ENV === 'production' ? 'https://www.ubclaunchpad.com' : ['http://localhost:3000', '*'],
+    allowHeaders: ['Origin', 'Content-Type', 'Authorization'],
     allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
-    exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+    exposeHeaders: ['Content-Length'],
     maxAge: 600,
   })
 )
