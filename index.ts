@@ -95,5 +95,6 @@ app.post('/colony/integrations/discord', async (c) => {
 })
 
 export default {
+  port: process.env.PORT || 3000,
   fetch: app.fetch,
 }
