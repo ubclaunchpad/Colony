@@ -10,7 +10,8 @@ import { discordServer } from "./util/discord.ts";
 
 const router = new Router();
 
-const privateKey = Deno.env.get("GH_KEY")!;
+const rawprivateKey = Deno.env.get("GH_KEY")!;
+const privateKey = rawprivateKey.replace(/\\n/g, "\n");
 const appId = Deno.env.get("GH_APP_ID")!;
 const orgClientId = Deno.env.get("GH_CLIENT_ID")!;
 const orgAppId = Deno.env.get("GH_ORG_APP_ID")!;
