@@ -34,6 +34,7 @@ export class OrganizationGithubManager {
     this.app = new App({
       appId,
       privateKey,
+      installationId: orgAppId,
     });
   }
 
