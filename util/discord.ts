@@ -9,6 +9,8 @@ import {
 const TOKEN = Deno.env.get("DISCORD_TOKEN")!;
 const GUILD_ID = Deno.env.get("GUILD_ID")!;
 
+
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
