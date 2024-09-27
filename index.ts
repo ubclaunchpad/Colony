@@ -5,8 +5,7 @@ import { discordServer } from "./util/discord"
 
 const app = new Hono()
 
-const rawprivateKey = process.env.GH_KEY!
-const privateKey = rawprivateKey.replace(/\\n/g, "\n")
+const privateKey = process.env.GH_KEY!
 const appId = process.env.GH_APP_ID!
 const orgClientId = process.env.GH_CLIENT_ID!
 const orgAppId = process.env.GH_ORG_APP_ID!
