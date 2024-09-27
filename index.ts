@@ -1,9 +1,22 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { z } from 'zod'
 import { OrganizationGithubManager, setupGithubUserForOrg } from "./util/github"
 import { discordServer } from "./util/discord"
 
+
 const app = new Hono()
+
+app.use(
+  '/colony/*',
+  cors({
+    origin: process.env.NODE_ENV === 'production' ? 'https://www.ubclaunchpad.com' : '*',
+    allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests'],
+    allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
+    exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+    maxAge: 600,
+  })
+)
 
 const privateKey = process.env.GH_KEY!
 const appId = process.env.GH_APP_ID!
