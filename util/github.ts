@@ -1,5 +1,5 @@
-import { App } from "npm:octokit";
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { App } from "octokit";
+import { z } from "zod";
 
 interface ConstructorParams {
   appId: string;
@@ -41,7 +41,9 @@ export class OrganizationGithubManager {
     const okto = await this.app.getInstallationOctokit(this.orgAppId);
     await okto.request("PUT /user/following/{username}", {
       username: this.orgName,
+      
       headers: {
+
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });
@@ -87,7 +89,7 @@ export class OrganizationGithubManager {
     }
   }
 
-  
+
 
   public async removeOrgMember(githubUsername: string) {
     const okto = await this.app.getInstallationOctokit(this.orgAppId);

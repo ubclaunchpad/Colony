@@ -1,15 +1,16 @@
-import type { Role } from "npm:discord.js";
+import type { Role } from "discord.js";
 import {
   Client,
   Events,
   GatewayIntentBits,
   Guild,
-} from "npm:discord.js";
+} from "discord.js";
 
-const TOKEN = Deno.env.get("DISCORD_TOKEN")!;
-const GUILD_ID = Deno.env.get("GUILD_ID")!;
+// const TOKEN = Deno.env.get("DISCORD_TOKEN")!;
+// const GUILD_ID = Deno.env.get("GUILD_ID")!;
 
-
+const TOKEN = Bun.env.DISCORD_TOKEN;
+const GUILD_ID = Bun.env.GUILD_ID;
 
 const client = new Client({
   intents: [

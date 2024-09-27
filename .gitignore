@@ -9,3 +9,5 @@ codeStyles
 .vscode
 test.csv
 test.csv:Zone.Identifier
+
+# *.pem
