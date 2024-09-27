@@ -52,6 +52,7 @@ app.post('/colony/integrations/github', async (c) => {
         })
         return c.text('All actions completed successfully', 200)
       } catch (e) {
+        console.warn(e)
         return c.text((e as Error).message, 400)
       }
     } else {
