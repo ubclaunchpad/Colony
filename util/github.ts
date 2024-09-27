@@ -87,6 +87,8 @@ export class OrganizationGithubManager {
     }
   }
 
+  
+
   public async removeOrgMember(githubUsername: string) {
     const okto = await this.app.getInstallationOctokit(this.orgAppId);
     await okto.request("DELETE /orgs/{org}/memberships/{username}", {
