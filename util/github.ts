@@ -129,6 +129,7 @@ export class OrganizationGithubManager {
     const okto = await this.app.getInstallationOctokit(this.orgAppId);
     const resp = await okto.request("GET /orgs/{org}/teams", {
       org: this.orgName,
+      per_page: 100,
       headers: {
         "X-GitHub-Api-Version": "2022-11-28",
       },
@@ -208,6 +209,8 @@ export async function setupGithubUserForOrg({
     if (!manager.teams) {
       await manager.reSyncTeams();
     }
+
+    // console.log(manager.teams);
 
     const teams = options.actions.teams.filter(
       (team) => manager.teams?.find((t) => t.name.toLowerCase() === team.name.toLowerCase())
