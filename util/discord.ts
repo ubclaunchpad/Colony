@@ -1,94 +1,94 @@
-import type { Role } from "discord.js";
-import {
-  Client,
-  Events,
-  GatewayIntentBits,
-  Guild,
-} from "discord.js";
+// import type { Role } from "discord.js";
+// import {
+//   Client,
+//   Events,
+//   GatewayIntentBits,
+//   Guild,
+// } from "discord.js";
 
-// const TOKEN = Deno.env.get("DISCORD_TOKEN")!;
-// const GUILD_ID = Deno.env.get("GUILD_ID")!;
+// // const TOKEN = Deno.env.get("DISCORD_TOKEN")!;
+// // const GUILD_ID = Deno.env.get("GUILD_ID")!;
 
-const TOKEN = Bun.env.DISCORD_TOKEN!;
-const GUILD_ID = Bun.env.GUILD_ID!;
+// const TOKEN = Bun.env.DISCORD_TOKEN!;
+// const GUILD_ID = Bun.env.GUILD_ID!;
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildScheduledEvents,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.MessageContent,
-  ],
-});
-
-
-client.once(Events.ClientReady, (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
-  });
+// const client = new Client({
+//   intents: [
+//     GatewayIntentBits.Guilds,
+//     GatewayIntentBits.DirectMessages,
+//     GatewayIntentBits.GuildMembers,
+//     GatewayIntentBits.GuildScheduledEvents,
+//     GatewayIntentBits.GuildPresences,
+//     GatewayIntentBits.MessageContent,
+//   ],
+// });
 
 
-export class DiscordServer {
-  roles: { [key: string]: Role } = {};
-  client: Client;
-  guild: Guild | null = null;
+// client.once(Events.ClientReady, (c) => {
+//     console.log(`Ready! Logged in as ${c.user.tag}`);
+//   });
 
-  constructor() {
-    this.client = client;
-  }
 
-  async init() {
-    await this.client.login(TOKEN);
-    console.log("Discord client logged in");
-  }
+// export class DiscordServer {
+//   roles: { [key: string]: Role } = {};
+//   client: Client;
+//   guild: Guild | null = null;
 
-  async getparams() {
-    const guild = await this.client.guilds.fetch(GUILD_ID);
-    const roles = await guild.roles.fetch();
-    this.guild = guild;
-    this.roles = {};
-    for (const [, role] of roles) {
-      this.roles[role.name.toLowerCase()] = role;
-    }
-  }
+//   constructor() {
+//     this.client = client;
+//   }
 
-  async addRoleToUser(username: string, roleName: string) {
+//   async init() {
+//     await this.client.login(TOKEN);
+//     console.log("Discord client logged in");
+//   }
 
-    if (!Object.keys(this.roles).includes(roleName.toLowerCase())) {
-        throw new Error(`Role ${roleName} not found in the server`);
-    }
+//   async getparams() {
+//     const guild = await this.client.guilds.fetch(GUILD_ID);
+//     const roles = await guild.roles.fetch();
+//     this.guild = guild;
+//     this.roles = {};
+//     for (const [, role] of roles) {
+//       this.roles[role.name.toLowerCase()] = role;
+//     }
+//   }
 
-    const collectionRes = await this.guild!.members.fetch({ query: username, limit: 1 });
-    if (!collectionRes || collectionRes.size === 0) {
-      throw new Error(`User ${username} not found in the server`);
-    }
+//   async addRoleToUser(username: string, roleName: string) {
 
-    const member = collectionRes.values().next().value;
-    await member.roles.add(this.roles[roleName.toLowerCase()].id);
+//     if (!Object.keys(this.roles).includes(roleName.toLowerCase())) {
+//         throw new Error(`Role ${roleName} not found in the server`);
+//     }
 
-  }
+//     const collectionRes = await this.guild!.members.fetch({ query: username, limit: 1 });
+//     if (!collectionRes || collectionRes.size === 0) {
+//       throw new Error(`User ${username} not found in the server`);
+//     }
 
-  async addRolesToUser(username: string, roleNames: string[]) {
-     // make sure all roles exist
-    roleNames.forEach(roleName => {
-      if (!Object.keys(this.roles).includes(roleName.toLowerCase())) {
-        throw new Error(`Role ${roleName} not found in the server`);
-      }});
+//     const member = collectionRes.values().next().value;
+//     await member.roles.add(this.roles[roleName.toLowerCase()].id);
+
+//   }
+
+//   async addRolesToUser(username: string, roleNames: string[]) {
+//      // make sure all roles exist
+//     roleNames.forEach(roleName => {
+//       if (!Object.keys(this.roles).includes(roleName.toLowerCase())) {
+//         throw new Error(`Role ${roleName} not found in the server`);
+//       }});
       
-    await Promise.all(roleNames.map(role => this.addRoleToUser(username, role)));
-  }
+//     await Promise.all(roleNames.map(role => this.addRoleToUser(username, role)));
+//   }
 
-  async start() {
-    await this.client.login(TOKEN);
-    await this.getparams();
-  }
-}
+//   async start() {
+//     await this.client.login(TOKEN);
+//     await this.getparams();
+//   }
+// }
 
 
 
-const discordServer = new DiscordServer();
-discordServer.start();
-export { discordServer };
+// const discordServer = new DiscordServer();
+// discordServer.start();
+// export { discordServer };
 
 

@@ -9,6 +9,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@hono/swagger-ui": "^0.5.0",
     "discord.js": "^14.16.2",
     "hono": "^4.6.3",
     "octokit": "^4.0.2",
