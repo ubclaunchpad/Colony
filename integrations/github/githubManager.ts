@@ -7,6 +7,8 @@ import type {
   GithubOrganizationManagerInterface,
 } from "./types";
 import { GitHubAPIError } from "./errorTypes";
+import type { GHEventManagerInterface } from "./events/types";
+import { GithubEventManager } from "./events/githubEventManager";
 
 export class GithubOrganizationManager
   implements GHAuthManagerInterface, GithubOrganizationManagerInterface
@@ -22,6 +24,7 @@ export class GithubOrganizationManager
     | { id: number; node_id: string; url: string; name: string; slug: string }[]
     | null = null;
   defaultHeaders: Record<string, string>;
+  githubEventManager: GHEventManagerInterface;
 
   constructor({
     appId,
@@ -42,9 +45,14 @@ export class GithubOrganizationManager
       privateKey,
       installationId: orgAppId,
     });
+    this.githubEventManager = new GithubEventManager(octoClient);
     this.defaultHeaders = {
       "X-GitHub-Api-Version": "2022-11-28",
     };
+  }
+
+  public getEventManager() {
+    return this.githubEventManager;
   }
 
 

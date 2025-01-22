@@ -24,8 +24,6 @@ export const githubAppSchema = z.object({
 })
 
 
-
-
 export const AddMemberOptionsSchema = z.object({
   role: z.enum(["maintainer", "member", "admin"]).default("member"),
   teams: z
@@ -59,9 +57,7 @@ export interface GithubOrganizationManagerInterface {
 }
 
 
-
-
 export interface GHAuthManagerInterface {
     initiateDeviceFlow(): Promise<any>;
-    
 }
+

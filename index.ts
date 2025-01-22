@@ -1,8 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import githubRouter from "./routes";
+import githubRouter from "./routes/githubRouter";
+import { discordRouter } from "./routes/discordRouter";
 
-const app = new Hono().route("/colony/github", githubRouter);
+const app = new Hono()
+.route("/colony/github", githubRouter)
+.route("/colony/discord", discordRouter);
 
 const allowedOrigins = [];
 

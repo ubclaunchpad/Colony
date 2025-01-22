@@ -1,48 +1,12 @@
 import { Hono } from "hono";
-import { GithubOrganizationManager } from "../integrations/github/githubManager";
+
 import {
   AddMemberToTeamsOptionsSchema,
-  githubAppSchema,
 } from "../integrations/github/types";
-import { App } from "octokit";
 import { GitHubAPIError } from "../integrations/github/errorTypes";
+import { githubManager } from "../integrations/github";
+import { parsePRPayloadForDB, PRRawPayloadSchema } from "../integrations/github/events/helpers/githubApiParser";
 
-const privateKey = process.env.GH_KEY!;
-const appId = process.env.GH_APP_ID!;
-const orgClientId = process.env.GH_CLIENT_ID!;
-const orgAppId = process.env.GH_ORG_APP_ID!;
-const orgName = process.env.GH_ORG_NAME!;
-
-const githubAppConfig = {
-  appId: appId,
-  privateKey: privateKey,
-  orgName: orgName,
-  orgAppId: parseInt(orgAppId),
-  orgClientId: orgClientId,
-};
-
-const githubSchemaChecker = githubAppSchema.safeParse(githubAppConfig);
-if (!githubSchemaChecker.success) {
-  console.warn(
-    "Invalid Github App Config - Please check the following errors:"
-  );
-  console.error(githubSchemaChecker.error.errors);
-  process.exit(1);
-}
-
-const app = new App({
-  appId,
-  privateKey,
-  installationId: orgAppId,
-});
-
-const octoClient = await app.getInstallationOctokit(
-  githubSchemaChecker.data.orgAppId
-);
-const githubManager = new GithubOrganizationManager({
-  ...githubSchemaChecker.data,
-  octoClient,
-});
 
 const githubRouter = new Hono();
 
@@ -128,7 +92,20 @@ githubRouter.get("/connect", async (c) => {
 });
 
 
+githubRouter.post("/events", async (c) => {
+  const body = await c.req.json();
+  const cleanedBody = PRRawPayloadSchema.safeParse(body);
+  if (!cleanedBody.success) {
+    console.warn("Invalid PR Payload - Please check the following errors:");
+    console.log(cleanedBody.error.errors);
+    return c.json(cleanedBody.error.errors, 422);
+  }
+
+  const eventData = parsePRPayloadForDB(cleanedBody.data);
+  await githubManager.getEventManager().processEvent(eventData);
+  return c.json({ message: "Event processed successfully" });
+});
+
+
+
 export default githubRouter;
-
-
-
