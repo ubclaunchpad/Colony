@@ -33,7 +33,7 @@ export const PREntrySchema = z.object({
   additions: z.number(),
   deletions: z.number(),
   is_merged: z.boolean(),
-  author: z.string(),
+  author: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
   properties: z.object({
@@ -41,7 +41,8 @@ export const PREntrySchema = z.object({
     head_sha: z.string(),
     base_ref: z.string(),
     base_sha: z.string(),
-    mergeable: z.boolean(),
+    body: z.string().nullable(),
+    mergeable: z.boolean().nullable(),
     commits: z.number(),
     changed_files: z.number(),
     requested_reviewers: z.array(z.string()),

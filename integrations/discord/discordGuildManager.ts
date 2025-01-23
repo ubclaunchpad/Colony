@@ -1,4 +1,4 @@
-import type { DiscordGuildManagerInterface } from "./types";
+import type { ClientWithCommands, DiscordGuildManagerInterface } from "./types";
 
 import type { GuildMember, Role } from "discord.js";
 import {
@@ -6,6 +6,7 @@ import {
   Events,
   GatewayIntentBits,
   Guild,
+  Partials,
 } from "discord.js";
 
 
@@ -21,13 +22,13 @@ if (!DISCORD_TOKEN || !GUILD_ID) {
 
 
 export class DiscordGuildManager implements DiscordGuildManagerInterface {
-    client: Client;
+    client: ClientWithCommands;
     guild: Guild;
     token: string;
     guildID: string;
 
     constructor(client: Client, guildID: string, token: string, guild: Guild) {
-        this.client = client;
+        this.client = client as ClientWithCommands;
         this.guildID = guildID;
         this.token = token;
         this.guild = guild;
@@ -97,20 +98,29 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
 
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildScheduledEvents,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.DirectMessageReactions,
+      GatewayIntentBits.DirectMessageTyping,
+      GatewayIntentBits.GuildMembers,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildScheduledEvents,
+      GatewayIntentBits.GuildPresences,
+      GatewayIntentBits.MessageContent,
+    ],
+    partials: [
+        Partials.Message,
+        Partials.Channel,
+    ]
+  });
 
 
 client.once(Events.ClientReady, (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
+    console.log(`Discord Bot connected! Logged in as ${c.user.tag}`);
+    console.log("---------------------------------------------")
   });
+
 
 
 const guild = await DiscordGuildManager.setUpManager(client, GUILD_ID, DISCORD_TOKEN);

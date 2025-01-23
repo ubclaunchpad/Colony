@@ -81,6 +81,7 @@ export function parsePRPayloadForDB(
     created_at: payload.pull_request.created_at,
     updated_at: payload.pull_request.updated_at,
     properties: {
+      body: payload.pull_request.body,
       head_ref: payload.pull_request.head.ref,
       head_sha: payload.pull_request.head.sha,
       base_ref: payload.pull_request.base.ref,

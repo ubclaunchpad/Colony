@@ -1,3 +1,4 @@
+import type { Client, Collection } from "discord.js";
 import {z} from "zod";
 
 export interface DiscordGuildManagerInterface {
@@ -15,5 +16,8 @@ export const AddDiscordRolesSchema = z.object({
 });
 
 
+export interface ClientWithCommands extends Client {
+    commands: Collection<string, any>
+  }
 
 export const RemoveDiscordRolesSchema = AddDiscordRolesSchema;
