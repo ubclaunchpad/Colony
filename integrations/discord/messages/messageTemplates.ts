@@ -19,7 +19,6 @@ async function formatMessage(event: PREvent) {
 
   const map = data?.reduce((acc: Record<string, string>, d) => {
     const member = members.find((m) => m.user.username === d.discord_id);
-    console.log(d);
     if (member) {
       acc[d.github_username] = member.id;
     }

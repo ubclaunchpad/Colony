@@ -35,9 +35,7 @@ for (const commandFilePath of commandFilePaths) {
 }
 
 client.on(Events.InteractionCreate, async interaction => {
-  console.log("s")
   if (!interaction.isChatInputCommand()) return;
-
   const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
   if (!command) {
     console.error(`No command matching ${interaction.commandName} was found.`);

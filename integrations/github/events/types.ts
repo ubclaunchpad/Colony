@@ -18,8 +18,9 @@ export const SubscribeGHEventDiscordSchema = z.object({
 });
 
 export const UnsubscribeGHEventDiscordSchema = z.object({
-  events: z.array(z.enum(SUPPORTED_EVENTS)),
+  repository: z.string(),
   dest: z.object({
+    guildId: z.string(),
     channelID: z.string(),
   }),
 });
@@ -65,4 +66,13 @@ export interface GHEventManagerInterface {
   subscribeToEvents(payload: SubscribePayload): Promise<void>;
   unsubscribeFromEvents(payload: UnsubscribePayload): Promise<void>;
   processEvent(event: PREvent): Promise<void>;
+}
+
+
+export interface MessageMap {
+  [guildId: string]: {
+    [channelId: string]: {
+      messageId: string;
+    };
+  };
 }
