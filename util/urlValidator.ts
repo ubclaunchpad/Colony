@@ -11,6 +11,6 @@ export function extractOrgRepo(link: string): string {
     throw new Error("Invalid GitHub URL");
   }
 
-  const path = link.slice(prefix.length + 1);
+  const path = link.slice(prefix.length);
   return path;
 }
