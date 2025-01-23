@@ -26,7 +26,6 @@ discordRouter.put("/:username/roles", async (c) => {
   }
   try {
     await discordManager.addRolesToUser(username, parsed.data.roles, "Label");
-    console.log("added");
     return c.text("Roles added");
   } catch (e) {
     return c.text("Internal server error", 500);
