@@ -5,8 +5,8 @@ import { discordRouter } from "./routes/discordRouter";
 import "./integrations/discord/listener.js";
 
 const app = new Hono()
-.route("/colony/github", githubRouter)
-.route("/colony/discord", discordRouter);  
+  .route("/colony/github", githubRouter)
+  .route("/colony/discord", discordRouter);
 
 const allowedOrigins = [];
 
@@ -39,6 +39,6 @@ app.get("/", (c) => {
   return c.text("Colony Engine API active");
 });
 
-console.log("API is running");
+console.info("API is running");
 
 export default app;

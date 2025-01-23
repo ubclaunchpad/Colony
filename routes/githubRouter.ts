@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 
-import {
-  AddMemberToTeamsOptionsSchema,
-} from "../integrations/github/types";
+import { AddMemberToTeamsOptionsSchema } from "../integrations/github/types";
 import { GitHubAPIError } from "../integrations/github/errorTypes";
 import { githubManager } from "../integrations/github";
-import { parsePRPayloadForDB, PRRawPayloadSchema } from "../integrations/github/events/helpers/githubApiParser";
-
+import {
+  parsePRPayloadForDB,
+  PRRawPayloadSchema,
+} from "../integrations/github/events/helpers/githubApiParser";
 
 const githubRouter = new Hono();
 
@@ -17,7 +17,9 @@ githubRouter.get("/", (c) => {
 githubRouter.get("/:username/status", async (c) => {
   const username = c.req.param("username");
   try {
-    return c.json({ isMember: await githubManager.isOrganizaionMember(username) });
+    return c.json({
+      isMember: await githubManager.isOrganizaionMember(username),
+    });
   } catch (e) {
     if (e instanceof GitHubAPIError) {
       return c.text(
@@ -86,11 +88,9 @@ githubRouter.put("/:username/teams", async (c) => {
   }
 });
 
-
 githubRouter.get("/connect", async (c) => {
   return c.json({ url: githubManager.initiateDeviceFlow() });
 });
-
 
 githubRouter.post("/events", async (c) => {
   const body = await c.req.json();
@@ -105,7 +105,5 @@ githubRouter.post("/events", async (c) => {
   await githubManager.getEventManager().processEvent(eventData);
   return c.json({ message: "Event processed successfully" });
 });
-
-
 
 export default githubRouter;

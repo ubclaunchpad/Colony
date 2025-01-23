@@ -1,7 +1,1 @@
-
-
-
-
-export class GitHubAPIError extends Error {
-
-}
+export class GitHubAPIError extends Error {}

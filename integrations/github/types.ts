@@ -1,9 +1,7 @@
 import type { Octokit } from "octokit";
 import { z } from "zod";
 
-
-
-/// later maybe: getteams, 
+/// later maybe: getteams,
 
 export interface ConstructorParams {
   appId: string;
@@ -11,18 +9,16 @@ export interface ConstructorParams {
   orgName: string;
   orgAppId: number;
   orgClientId: string;
-  octoClient: Octokit
+  octoClient: Octokit;
 }
 
-
 export const githubAppSchema = z.object({
-    appId: z.string(),
-    privateKey: z.string(),
-    orgName: z.string(),
-    orgAppId: z.number(),
-    orgClientId: z.string(),
-})
-
+  appId: z.string(),
+  privateKey: z.string(),
+  orgName: z.string(),
+  orgAppId: z.number(),
+  orgClientId: z.string(),
+});
 
 export const AddMemberOptionsSchema = z.object({
   role: z.enum(["maintainer", "member", "admin"]).default("member"),
@@ -36,15 +32,12 @@ export const AddMemberOptionsSchema = z.object({
     .default([]),
 });
 
-
-export const AddMemberToTeamsOptionsSchema = z
-      .array(
-        z.object({
-          name: z.string(),
-          role: z.enum(["maintainer", "member"]).default("member"),
-        })
-    )
-    
+export const AddMemberToTeamsOptionsSchema = z.array(
+  z.object({
+    name: z.string(),
+    role: z.enum(["maintainer", "member"]).default("member"),
+  })
+);
 
 export interface GithubOrganizationManagerInterface {
   isOrganizaionMember(ghUsername: string): Promise<boolean>;
@@ -56,8 +49,6 @@ export interface GithubOrganizationManagerInterface {
   ): Promise<void>;
 }
 
-
 export interface GHAuthManagerInterface {
-    initiateDeviceFlow(): Promise<any>;
+  initiateDeviceFlow(): Promise<any>;
 }
-

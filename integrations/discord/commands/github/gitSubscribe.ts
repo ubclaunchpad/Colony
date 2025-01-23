@@ -5,7 +5,10 @@ import {
 } from "discord.js";
 import { githubManager } from "../../../github";
 import { SubscribeGHEventDiscordSchema } from "../../../github/events/types";
-import { extractOrgRepo, isValidGitHubLink } from "../../../../util/urlValidator";
+import {
+  extractOrgRepo,
+  isValidGitHubLink,
+} from "../../../../util/urlValidator";
 
 const optionChoices: APIApplicationCommandOptionChoice<string>[] = [
   { name: "Pull Requests", value: "pull_request" },
@@ -40,7 +43,9 @@ async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const parsedEvents = SubscribeGHEventDiscordSchema.pick({events: true}).safeParse({events: [eventType]});
+  const parsedEvents = SubscribeGHEventDiscordSchema.pick({
+    events: true,
+  }).safeParse({ events: [eventType] });
   const channelId = interaction.channelId;
   const guildId = interaction.guildId;
 
@@ -80,6 +85,5 @@ async function execute(interaction: ChatInputCommandInteraction) {
     });
   }
 }
-
 
 export { data, execute };

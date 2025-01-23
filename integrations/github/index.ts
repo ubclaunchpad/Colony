@@ -38,4 +38,3 @@ export const githubManager = new GithubOrganizationManager({
   ...githubSchemaChecker.data,
   octoClient,
 });
-

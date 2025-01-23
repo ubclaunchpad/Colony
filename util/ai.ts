@@ -6,7 +6,7 @@ const client = new OpenAI({
 });
 
 interface AICallOptions {
-  additional: ChatCompletionMessageParam[]
+  additional: ChatCompletionMessageParam[];
 }
 
 export async function callAI(message: string, options?: AICallOptions) {
@@ -21,5 +21,5 @@ export async function callAI(message: string, options?: AICallOptions) {
     ],
     model: "gpt-4o-mini",
   });
-  return chatCompletion
+  return chatCompletion;
 }
