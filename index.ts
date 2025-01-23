@@ -1,113 +1,46 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { z } from 'zod'
-import { OrganizationGithubManager, setupGithubUserForOrg } from "./util/github"
-import { discordServer } from "./util/discord"
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import githubRouter from "./routes/githubRouter";
+import { discordRouter } from "./routes/discordRouter";
+import "./integrations/discord/listener.js";
 
+const app = new Hono();
 
-const app = new Hono()
+const allowedOrigins: string[] = [];
+
+if (process.env.NODE_ENV === "production") {
+  if (!process.env.ALLOWED_PROD_ORIGIN) {
+    throw new Error("ALLOWED_PROD_ORIGIN not set in production environment");
+  }
+  allowedOrigins.push(process.env.ALLOWED_PROD_ORIGIN);
+} else {
+  if (!process.env.ALLOWED_DEV_ORIGIN) {
+    throw new Error("ALLOWED_DEV_ORIGIN not set in development environment");
+  }
+  allowedOrigins.push(process.env.ALLOWED_DEV_ORIGIN);
+  allowedOrigins.push("http://localhost:8000");
+  allowedOrigins.push("http://localhost:3000");
+  allowedOrigins.push("http://127.0.0.1:8000");
+}
 
 app.use(
-  '/colony/*',
+  "/colony/*",
   cors({
-    origin: process.env.NODE_ENV === 'production' ? 'https://www.ubclaunchpad.com' : ['http://localhost:3000', '*'],
-    allowHeaders: ['Origin', 'Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
-    exposeHeaders: ['Content-Length'],
-    maxAge: 600,
+    origin: allowedOrigins,
+    exposeHeaders: ["*"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
-)
+);
 
-const privateKey = process.env.GH_KEY!
-const appId = process.env.GH_APP_ID!
-const orgClientId = process.env.GH_CLIENT_ID!
-const orgAppId = process.env.GH_ORG_APP_ID!
-const orgName = process.env.GH_ORG_NAME!
+app
+  .route("/colony/github", githubRouter)
+  .route("/colony/discord", discordRouter);
 
-const githubManager = new OrganizationGithubManager({
-  appId: appId,
-  privateKey: privateKey,
-  orgName: orgName,
-  orgAppId: parseInt(orgAppId),
-  orgClientId: orgClientId,
-})
+app.get("/", (c) => {
+  return c.text("Colony Engine API active");
+});
 
-app.get('/', (c) => {
-  return c.text('Launch Pad Colony Engine API')
-})
+console.info("API is running");
 
-type GithubTeam = {
-  name: string
-  role: "maintainer" | "member"
-}
-
-const GithubIntegrationSchema = z.object({
-  githubUsername: z.string(),
-  actions: z.object({
-    teams: z.array(
-      z.object({
-        name: z.string(),
-        role: z.enum(["maintainer", "member"]),
-      })
-    ),
-  }),
-})
-
-app.post('/colony/integrations/github', async (c) => {
-  try {
-    const body = await c.req.json()
-    const parseResult = GithubIntegrationSchema.safeParse(body)
-    if (parseResult.success) {
-      try {
-        await setupGithubUserForOrg({
-          manager: githubManager,
-          options: parseResult.data,
-        })
-        return c.text('All actions completed successfully', 200)
-      } catch (e) {
-        console.warn(e)
-        return c.text((e as Error).message, 400)
-      }
-    } else {
-      return c.json(parseResult.error.errors, 400)
-    }
-  } catch (e) {
-    console.warn(e)
-    return c.text('Internal server error', 500)
-  }
-})
-
-const DiscordIntegrationSchema = z.object({
-  discordUsername: z.string(),
-  actions: z.object({
-    roles: z.array(z.string()),
-  }),
-})
-
-app.post('/colony/integrations/discord', async (c) => {
-  try {
-    const body = await c.req.json()
-    const parseResult = DiscordIntegrationSchema.safeParse(body)
-    if (parseResult.success) {
-      try {
-        await discordServer.addRolesToUser(
-          parseResult.data.discordUsername,
-          parseResult.data.actions.roles
-        )
-        return c.text('All roles added successfully', 200)
-      } catch (e) {
-        return c.text((e as Error).message, 400)
-      }
-    } else {
-      return c.json(parseResult.error.errors, 400)
-    }
-  } catch (e) {
-    console.warn(e)
-    return c.text('Internal server error', 500)
-  }
-})
-
-export default {
-  port: process.env.PORT || 3000,
-  fetch: app.fetch,
-}
+export default app;
