@@ -18,6 +18,7 @@ export const PRRawPayloadSchema = z.object({
     deletions: z.number(),
     changed_files: z.number(),
     url: z.string(),
+    html_url: z.string(),
     user: z.object({
       login: z.string(),
     }),
@@ -101,7 +102,7 @@ export function parsePRPayloadForDB(
       labels: payload.pull_request.labels.map((label) => label.name),
       comments_url: payload.pull_request.comments_url,
       draft: payload.pull_request.draft,
-      url: payload.pull_request.url,
+      url: payload.pull_request.html_url,
     },
   };
 }

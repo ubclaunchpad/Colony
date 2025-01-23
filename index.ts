@@ -13,6 +13,9 @@ if (process.env.NODE_ENV === "production") {
     throw new Error("ALLOWED_PROD_ORIGIN not set in production environment");
   }
   allowedOrigins.push(process.env.ALLOWED_PROD_ORIGIN);
+  allowedOrigins.push("https://api.github.com");
+  allowedOrigins.push("https://www.github.com");
+  
 } else {
   if (!process.env.ALLOWED_DEV_ORIGIN) {
     throw new Error("ALLOWED_DEV_ORIGIN not set in development environment");
