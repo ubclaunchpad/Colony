@@ -11,11 +11,6 @@ discordRouter.get("/", (c) => {
   return c.text("Discord Integration API");
 });
 
-discordRouter.get("/members", async (c) => {
-  const m = await discordManager.guild.members.fetch();
-  console.log(m);
-  return c.text("ss");
-});
 
 discordRouter.put("/:username/roles", async (c) => {
   const username: string = c.req.param("username");
@@ -26,7 +21,6 @@ discordRouter.put("/:username/roles", async (c) => {
   }
   try {
     await discordManager.addRolesToUser(username, parsed.data.roles, "Label");
-    return c.text("Roles added");
   } catch (e) {
     return c.text("Internal server error", 500);
   }
@@ -45,8 +39,7 @@ discordRouter.delete("/:username/roles", async (c) => {
       parsed.data.roles,
       "Label"
     );
-    console.log("added");
-    return c.text("Roles added");
+    return c.text("Roles Removed");
   } catch (e) {
     return c.text("Internal server error", 500);
   }
