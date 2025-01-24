@@ -38,6 +38,6 @@ export const Logger = {
 
 
 export const apiLogger = createMiddleware(async (c, next) => {
- log("info", `[${c.req.method}] ${c.req.url}`);
+ log("info", `[${c.req.method}] ${c.req.url} from ${c.req.header("origin") || "direct"}`);
  await next();
 });
