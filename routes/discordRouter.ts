@@ -12,6 +12,18 @@ discordRouter.get("/", (c) => {
 });
 
 
+discordRouter.use('*',async (c, next) => {
+  const isReady: boolean = discordManager.client.isReady()
+  if (!isReady) {
+    await next();
+  } else {
+    c.status(503);
+    return c.text("Not accepting colony events");
+  }
+});
+
+
+
 discordRouter.put("/:username/roles", async (c) => {
   const username: string = c.req.param("username");
   const body = await c.req.json();
