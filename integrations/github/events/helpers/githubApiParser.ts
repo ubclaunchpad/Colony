@@ -5,8 +5,8 @@ export const PRRawPayloadSchema = z.object({
   action: z.string(),
   number: z.number(),
   pull_request: z.object({
-    title: z.string(),
-    body: z.string(),
+    title: z.string().nullable(),
+    body: z.string().nullable(),
     created_at: z.string(),
     updated_at: z.string(),
     state: z.string(),
