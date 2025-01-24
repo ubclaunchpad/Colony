@@ -28,9 +28,9 @@ export const UnsubscribeGHEventDiscordSchema = z.object({
 export const PREntrySchema = z.object({
   id: z.number(),
   repository: z.string(),
-  pr_number: z.number(),
+  pr_number: z.number().nullable(),
   state: z.string(),
-  title: z.string(),
+  title: z.string().nullable(),
   additions: z.number(),
   deletions: z.number(),
   is_merged: z.boolean(),
