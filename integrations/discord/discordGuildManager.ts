@@ -1,13 +1,15 @@
 import type { ClientWithCommands, DiscordGuildManagerInterface } from "./types";
 
-import type { GuildMember, Role } from "discord.js";
+import type { GuildMember } from "discord.js";
 import { Client, Events, GatewayIntentBits, Guild, Partials } from "discord.js";
+import { Logger } from "../../util/logger";
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
 
 if (!DISCORD_TOKEN || !GUILD_ID) {
-  console.warn("Invalid Discord Environment variables");
+  Logger.log("warn", `Invalid Discord Environment variables`);
+  Logger.log("error", "Missing at least one of <GUILD_ID> or <DISCORD_TOKEN>")
   process.exit(1);
 }
 
@@ -28,6 +30,20 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
     await client.login(token);
     const guild = await client.guilds.fetch(guildID);
     return guild;
+  }
+
+  async resumeBot() {
+    Logger.log("warn", `Resuming Discord Bot >>>>>`);
+    await client.login(this.token);
+    const guild = await client.guilds.fetch(this.guildID);
+    Logger.log("warn", `Resumed Discord Bot <<<<<`);
+    return guild;
+  }
+
+  async stopDiscordManager() {
+    Logger.log("warn", `Stopping Discord Bot >>>>>`);
+    await client.destroy();
+    Logger.log("warn", `Stopped Discord Bot  <<<<<`);
   }
 
   async addRolesToUser(
@@ -135,8 +151,7 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, (c) => {
-  console.log(`Discord Bot connected! Logged in as ${c.user.tag}`);
-  console.log("---------------------------------------------");
+  Logger.log("info", `Discord Bot connected! Logged in as ${c.user.tag}`);
 });
 
 const guild = await DiscordGuildManager.setUpManager(

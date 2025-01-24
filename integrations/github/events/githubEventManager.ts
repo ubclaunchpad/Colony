@@ -11,7 +11,7 @@ import { supabase } from "../../../util/database";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Messages } from "../../discord/messages/messageTemplates";
 import { discordManager } from "../../discord/discordGuildManager";
-
+import { Logger } from "../../../util/logger";
 
 export class GithubEventManager implements GHEventManagerInterface {
   octoClient: Octokit;
@@ -31,7 +31,19 @@ export class GithubEventManager implements GHEventManagerInterface {
         },
         async (payload) => this.broadcastToListeners(payload)
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        Logger.log(
+          "info",
+          `SUPABASE channel subscription status for schema changes in pull_requests: ${status}`
+        );
+        if (err) {
+          Logger.log(
+            "warn",
+            `Issue with subscribing to Github Events inside the database - channel subscription status: ${status}`,
+            err
+          );
+        }
+      });
   }
 
   async subscribeToEvents(payload: SubscribePayload): Promise<void> {
@@ -46,17 +58,16 @@ export class GithubEventManager implements GHEventManagerInterface {
           repository: repository,
           is_active: true,
           events: events,
-          config: {}, // TODO: Support config
+          config: {},
         });
 
       if (error) {
-        console.warn(
-          "Integration error subscribing to events - Check the logs for more information"
-        );
-        console.error(error);
+        Logger.log("warn", "Integration error subscribing to events", {
+          error,
+        });
       }
     } catch (e) {
-      console.error(e);
+      Logger.log("error", "Failed to subscribe to events", { error: e });
     }
   }
 
@@ -67,16 +78,15 @@ export class GithubEventManager implements GHEventManagerInterface {
         .schema("lp_integrations")
         .from("listeners")
         .delete()
-        .match({ channel_id: dest.channelID, guild_id: dest.guildId});
-      // TODO: Support partial unsubscription - match on events as well
+        .match({ channel_id: dest.channelID, guild_id: dest.guildId });
+
       if (error) {
-        console.warn(
-          "Integration error unsubscribing from events - Check the logs for more information"
-        );
-        console.error(error);
+        Logger.log("warn", "Integration error unsubscribing from events", {
+          error,
+        });
       }
     } catch (e) {
-      console.error(e);
+      Logger.log("error", "Failed to unsubscribe from events", { error: e });
     }
   }
 
@@ -85,16 +95,23 @@ export class GithubEventManager implements GHEventManagerInterface {
       payload.schema !== "lp_integrations" ||
       payload.table !== "pull_requests"
     ) {
-      console.warn(
-        `Unsupported broadcast event: schema ${payload.schema}, table: ${payload.table}`
-      );
+      Logger.log("warn", "Unsupported broadcast event", {
+        schema: payload.schema,
+        table: payload.table,
+      });
       return;
     }
 
     const data = payload.new;
     const parsed = PREntrySchema.safeParse(data);
     if (!parsed.success) {
-      console.warn("Data mismatch between table entry change and expected");
+      Logger.log(
+        "warn",
+        "Data mismatch between table entry change and expected",
+        {
+          errors: parsed.error,
+        }
+      );
       return;
     }
 
@@ -106,16 +123,35 @@ export class GithubEventManager implements GHEventManagerInterface {
       .eq("repository", event.repository);
 
     if (error) {
-      console.warn("Server Error - Could not fetch from Supabase");
-      console.error(error);
+      Logger.log("warn", "Server Error - Could not fetch from Supabase", {
+        error,
+      });
     }
 
     if (!listeners || listeners.length == 0) {
-      console.log("no listeners will skip");
+      Logger.log("debug", "No listeners found, skipping broadcast");
       return;
     }
 
+    // Before embed creation:
+    Logger.log("debug", `Creating message template for PR #${event.id}`, {
+      repository: event.repository,
+      author: event.author,
+      state: event.state,
+    });
+
     const embed = await Messages.PR(event);
+
+    if (embed == null) {
+       Logger.log("warn", `Could not create embed for event:`, event);
+       return;
+    }
+
+    // After embed creation:
+    Logger.log("info", `Template created for PR #${event.id}`, {
+      hasContent: !!embed.content,
+      embedCount: embed.embeds.length,
+    });
 
     const { data: oldMessages } = await supabase
       .schema("lp_integrations")
@@ -123,14 +159,16 @@ export class GithubEventManager implements GHEventManagerInterface {
       .select()
       .eq("pr_number", event.id)
       .eq("repository", event.repository);
+
     const messageMap: MessageMap = (oldMessages ?? []).reduce(
-      (acc: MessageMap, msg) => {
+      (acc: MessageMap, msg: any) => {
         if (!acc[msg.guild_id]) acc[msg.guild_id] = {};
         acc[msg.guild_id][msg.channel_id] = { messageId: msg.message_id };
         return acc;
       },
       {}
     );
+
     for (const listener of listeners || []) {
       try {
         const channel = await discordManager.guild.channels.fetch(
@@ -141,14 +179,19 @@ export class GithubEventManager implements GHEventManagerInterface {
         const existingMessage =
           messageMap?.[listener.guild_id]?.[listener.channel_id];
 
+        // Inside each listener loop before sending:
+        Logger.log("debug", `Sending PR update to channel`, {
+          channelId: listener.channel_id,
+          guildId: listener.guild_id,
+          isUpdate: !!existingMessage,
+        });
+
         if (existingMessage) {
-          // Update existing message
           const message = await channel.messages.fetch(
             existingMessage.messageId
           );
           await message.edit(embed);
         } else {
-          // Send new message
           const newMessage = await channel.send(embed);
           await supabase.schema("lp_integrations").from("messages").insert({
             guild_id: listener.guild_id,
@@ -159,9 +202,10 @@ export class GithubEventManager implements GHEventManagerInterface {
           });
         }
       } catch (error) {
-        console.error(
-          `Error processing listener ${listener.channel_id}:`,
-          error
+        Logger.log(
+          "error",
+          `Error processing listener ${listener.channel_id}`,
+          { error }
         );
       }
     }
@@ -169,20 +213,28 @@ export class GithubEventManager implements GHEventManagerInterface {
 
   async processEvent(event: PREvent): Promise<void> {
     try {
+      if (event.properties.draft == true) {
+        Logger.log("info", "encounter draft PR, not saving it");
+        return;
+      }
+
       const { data, error: memberError } = await supabase
         .schema("public")
         .from("members")
         .select("github_username");
 
       if (memberError) {
-        console.warn("Integration error - Check the logs for more information");
-        console.error(memberError);
+        Logger.log("warn", "Integration error fetching members", {
+          error: memberError,
+        });
         return;
       }
 
-      const usernames = data?.map((d) => d.github_username);
+      const usernames = data?.map(
+        (d: { github_username: string }) => d.github_username
+      );
 
-      if (!usernames?.includes(event.author)) {
+      if (event.author && !usernames?.includes(event.author)) {
         event.author = null;
       }
 
@@ -190,12 +242,12 @@ export class GithubEventManager implements GHEventManagerInterface {
         .schema("lp_integrations")
         .from("pull_requests")
         .upsert(event);
+
       if (error) {
-        console.warn("Integration error - Check the logs for more information");
-        console.error(error);
+        Logger.log("warn", "Integration error upserting PR", { error });
       }
     } catch (e) {
-      console.error(e);
+      Logger.log("error", "Failed to process event", { error: e });
     }
   }
 }

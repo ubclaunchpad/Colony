@@ -3,10 +3,13 @@ import { cors } from "hono/cors";
 import githubRouter from "./routes/githubRouter";
 import { discordRouter } from "./routes/discordRouter";
 import "./integrations/discord/listener.js";
+import { apiLogger, Logger } from "./util/logger.js";
 
-const app = new Hono();
+const app = new Hono({ strict: false });
+app.use(apiLogger);
 
 const allowedOrigins: string[] = [];
+
 
 if (process.env.NODE_ENV === "production") {
   if (!process.env.ALLOWED_PROD_ORIGIN) {
@@ -15,7 +18,6 @@ if (process.env.NODE_ENV === "production") {
   allowedOrigins.push(process.env.ALLOWED_PROD_ORIGIN);
   allowedOrigins.push("https://api.github.com");
   allowedOrigins.push("https://www.github.com");
-  
 } else {
   if (!process.env.ALLOWED_DEV_ORIGIN) {
     throw new Error("ALLOWED_DEV_ORIGIN not set in development environment");
@@ -44,6 +46,6 @@ app.get("/", (c) => {
   return c.text("Colony Engine API active");
 });
 
-console.info("API is running");
+Logger.log("info", "API is running");
 
 export default app;
