@@ -192,6 +192,7 @@ export class GithubEventManager implements GHEventManagerInterface {
           );
           await message.edit(embed);
         } else {
+          try {
           const newMessage = await channel.send(embed);
           await supabase.schema("lp_integrations").from("messages").insert({
             guild_id: listener.guild_id,
@@ -200,6 +201,9 @@ export class GithubEventManager implements GHEventManagerInterface {
             pr_number: event.id,
             repository: event.repository,
           });
+        } catch(e) {
+          console.log("Could not send message will skip")
+        }
         }
       } catch (error) {
         Logger.log(
