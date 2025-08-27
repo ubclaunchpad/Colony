@@ -84,7 +84,6 @@ export class GithubOrganizationManager
           headers: this.defaultHeaders,
         }
       );
-
       if (resp.status !== 200) {
         return false;
       }
