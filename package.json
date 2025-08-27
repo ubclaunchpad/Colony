@@ -8,6 +8,12 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
+  "scripts": {
+    "build": "bun build index.ts --outdir ./dist --target bun",
+    "start": "bun run index.ts",
+    "dev": "bun --watch index.ts",
+    "register": "bun run integrations/discord/deployCommands.ts"
+  },
   "dependencies": {
     "@hono/swagger-ui": "^0.5.0",
     "@supabase/supabase-js": "^2.48.0",

@@ -1,8 +1,10 @@
 import { REST, Routes } from "discord.js";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const __dirname = new URL(".", import.meta.url).pathname;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.APP_ID;

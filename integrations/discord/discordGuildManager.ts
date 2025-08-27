@@ -71,8 +71,9 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
 
     serverRoles
       .filter((s) => roles.includes(s.name))
-      .map((role) => {
+      .forEach((role) => {
         const p = member.roles.add(role.id);
+        promises.push(p);
       });
 
     await Promise.all(promises);

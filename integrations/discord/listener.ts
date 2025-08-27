@@ -1,11 +1,13 @@
 import { Collection, Events } from "discord.js";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { discordManager } from "./discordGuildManager.js";
 import type { ClientWithCommands } from "./types.js";
 import { callAI } from "../../util/ai.js";
 
-const __dirname = new URL(".", import.meta.url).pathname;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const client = discordManager.client;
 
 client.commands = new Collection();

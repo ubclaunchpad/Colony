@@ -12,13 +12,12 @@ discordRouter.get("/", (c) => {
 });
 
 
-discordRouter.use('*',async (c, next) => {
-  const isReady: boolean = discordManager.client.isReady()
-  if (!isReady) {
-    await next();
+discordRouter.use('*', async (c, next) => {
+  const isReady: boolean = discordManager.client.isReady();
+  if (isReady) {
+    return await next();
   } else {
-    c.status(503);
-    return c.text("Not accepting colony events");
+    return c.text("Discord bot is not ready - cannot process requests", 503);
   }
 });
 
@@ -33,7 +32,9 @@ discordRouter.put("/:username/roles", async (c) => {
   }
   try {
     await discordManager.addRolesToUser(username, parsed.data.roles, "Label");
+    return c.text("Roles added successfully");
   } catch (e) {
+    console.log(e);
     return c.text("Internal server error", 500);
   }
 });
