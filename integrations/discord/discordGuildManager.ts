@@ -132,7 +132,90 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
   }
 
   async removeUserFromServer(discordUsername: string): Promise<void> {
-    throw new Error("Not Implemented");
+    const memberQuery = await this.guild.members.fetch({
+      query: discordUsername,
+      limit: 1,
+    });
+    
+    if (!memberQuery || memberQuery.size === 0) {
+      throw new Error(
+        `User ${discordUsername} not found in the Discord server`
+      );
+    }
+    
+    const member = memberQuery.values().next().value;
+    if (!member) {
+      throw new Error(
+        `User ${discordUsername} not found in the Discord server`
+      );
+    }
+    
+    // Check if bot can kick this member (hierarchy check)
+    const botMember = await this.guild.members.fetch(this.client.user!.id);
+    const botHighestRole = botMember.roles.highest;
+    const memberHighestRole = member.roles.highest;
+    
+    if (memberHighestRole.position >= botHighestRole.position) {
+      throw new Error(
+        `Cannot remove user ${discordUsername} - their role hierarchy is equal to or higher than the bot's`
+      );
+    }
+    
+    // Check if the member is the server owner
+    if (member.id === this.guild.ownerId) {
+      throw new Error(
+        `Cannot remove the server owner ${discordUsername}`
+      );
+    }
+    
+    // Kick the member from the server
+    await member.kick(`Removed via Colony API`);
+    console.log(`User ${discordUsername} has been removed from the server`);
+  }
+
+  async removeRoleFromAllMembers(
+    roleName: string,
+    deleteRole: boolean = false
+  ): Promise<{ membersAffected: number; roleDeleted: boolean }> {
+    // Get bot's highest role for hierarchy checking
+    const botMember = await this.guild.members.fetch(this.client.user!.id);
+    const botHighestRole = botMember.roles.highest;
+    
+    // Find the role by name
+    const serverRoles = await this.guild.roles.fetch();
+    const targetRole = serverRoles.find(role => role.name === roleName);
+    
+    if (!targetRole) {
+      throw new Error(`Role "${roleName}" not found in the server`);
+    }
+    
+    // Check if bot can manage this role
+    if (targetRole.position >= botHighestRole.position) {
+      throw new Error(`Cannot manage role "${roleName}" - bot's role hierarchy is insufficient`);
+    }
+    
+    // Get all members with this role
+    const membersWithRole = targetRole.members;
+    console.log(`Found ${membersWithRole.size} members with role "${roleName}"`);
+    
+    // Remove the role from all members
+    const removePromises = membersWithRole.map(member => 
+      member.roles.remove(targetRole.id)
+    );
+    
+    await Promise.all(removePromises);
+    
+    let roleDeleted = false;
+    if (deleteRole) {
+      await targetRole.delete();
+      roleDeleted = true;
+      console.log(`Role "${roleName}" deleted from server`);
+    }
+    
+    return {
+      membersAffected: membersWithRole.size,
+      roleDeleted
+    };
   }
 }
 

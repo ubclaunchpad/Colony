@@ -68,3 +68,46 @@ discordRouter.get("/:username/roles", async (c) => {
     return c.text("Internal server error", 500);
   }
 });
+
+// Remove a role from all members in the server (and optionally delete the role)
+discordRouter.delete("/roles/:roleName", async (c) => {
+  const roleName: string = c.req.param("roleName");
+  const deleteRole = c.req.query("delete") === "true"; // Optional query parameter
+  
+  try {
+    const result = await discordManager.removeRoleFromAllMembers(roleName, deleteRole);
+    
+    return c.json({
+      success: true,
+      message: `Role "${roleName}" removed from ${result.membersAffected} member(s)`,
+      membersAffected: result.membersAffected,
+      roleDeleted: result.roleDeleted
+    });
+  } catch (e: any) {
+    console.log(e);
+    return c.json({
+      success: false,
+      error: e.message || "Internal server error"
+    }, 500);
+  }
+});
+
+// Remove a user from the server (kick)
+discordRouter.delete("/:username", async (c) => {
+  const username: string = c.req.param("username");
+  
+  try {
+    await discordManager.removeUserFromServer(username);
+    
+    return c.json({
+      success: true,
+      message: `User "${username}" has been removed from the server`
+    });
+  } catch (e: any) {
+    console.log(e);
+    return c.json({
+      success: false,
+      error: e.message || "Internal server error"
+    }, 500);
+  }
+});
