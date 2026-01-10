@@ -62,3 +62,27 @@ We welcome contributions to Colony! Please follow the steps below to get started
 4. Push your changes to your fork
 5. Submit a pull request
 6. Woohoo! You're awesome!
+
+### Deployment commands ONLY (locally)
+```
+# Enable and start
+sudo systemctl enable colony-bot
+sudo systemctl start colony-bot
+
+# Check status
+sudo systemctl status colony-bot
+
+# View logs
+sudo journalctl -u colony-bot -f
+
+# Stop/restart
+sudo systemctl stop colony-bot
+sudo systemctl restart colony-bot
+```
+
+For uptime kuma
+```
+pm2 start server/server.js --name uptime-kuma
+```
+
+The server will be running on port 3001 for uptime kuma, and 3000 for the bot

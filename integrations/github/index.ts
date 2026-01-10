@@ -1,8 +1,9 @@
 import { App } from "octokit";
 import { GithubOrganizationManager } from "./githubManager";
 import { githubAppSchema } from "./types";
+import fs from "fs";
 
-const privateKey = process.env.GH_KEY!;
+const privateKey = process.env.GH_KEY || fs.readFileSync(process.env.GH_PRIVATE_KEY_PATH || "gkey.pem", "utf8");
 const appId = process.env.GH_APP_ID!;
 const orgClientId = process.env.GH_CLIENT_ID!;
 const orgAppId = process.env.GH_ORG_APP_ID!;

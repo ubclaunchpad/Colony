@@ -84,7 +84,6 @@ export class GithubOrganizationManager
           headers: this.defaultHeaders,
         }
       );
-
       if (resp.status !== 200) {
         return false;
       }
@@ -97,9 +96,22 @@ export class GithubOrganizationManager
 
   public async inviteToOrganization(ghUsername: string) {
     try {
-      await this.octoClient.request("PUT /orgs/{org}/memberships/{username}", {
-        org: this.orgName,
+      // First, get the user ID from the username
+      const userResponse = await this.octoClient.request("GET /users/{username}", {
         username: ghUsername,
+        headers: this.defaultHeaders,
+      });
+
+      if (userResponse.status !== 200) {
+        throw new GitHubAPIError(`User ${ghUsername} not found`);
+      }
+
+      const userId = userResponse.data.id;
+
+      // Now invite using the user ID
+      await this.octoClient.request("POST /orgs/{org}/invitations", {
+        org: this.orgName,
+        invitee_id: userId,
         headers: this.defaultHeaders,
       });
     } catch (e) {

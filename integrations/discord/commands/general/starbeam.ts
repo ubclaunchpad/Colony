@@ -4,7 +4,7 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from "discord.js";
-import { callAI } from "../../../../util/ai";
+// import { callAI } from "../../../../util/ai";
 
 const data = new SlashCommandBuilder()
   .setName("chat")
@@ -22,7 +22,8 @@ async function execute(interaction: ChatInputCommandInteraction) {
 
   setTimeout(() => {}, 3000);
 
-  const rep = (await callAI(message)).choices[0].message.content;
+  // const rep = (await callAI(message)).choices[0].message.content;
+  const rep = message;
 
   await interaction.editReply({
     content: rep,

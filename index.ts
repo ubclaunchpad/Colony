@@ -6,37 +6,29 @@ import "./integrations/discord/listener.js";
 import { apiLogger, Logger } from "./util/logger.js";
 
 const app = new Hono({ strict: false });
-app.use(apiLogger);
 
-const allowedOrigins: string[] = [];
-
-
-if (process.env.NODE_ENV === "production") {
-  if (!process.env.ALLOWED_PROD_ORIGIN) {
-    throw new Error("ALLOWED_PROD_ORIGIN not set in production environment");
-  }
-  allowedOrigins.push(process.env.ALLOWED_PROD_ORIGIN);
-  allowedOrigins.push("https://api.github.com");
-  allowedOrigins.push("https://www.github.com");
-} else {
-  if (!process.env.ALLOWED_DEV_ORIGIN) {
-    throw new Error("ALLOWED_DEV_ORIGIN not set in development environment");
-  }
-  allowedOrigins.push(process.env.ALLOWED_DEV_ORIGIN);
-  allowedOrigins.push("http://localhost:8000");
-  allowedOrigins.push("http://localhost:3000");
-  allowedOrigins.push("http://127.0.0.1:8000");
-}
-
+// Apply CORS globally to all routes
 app.use(
-  "/colony/*",
+  "*",
   cors({
-    origin: allowedOrigins,
+    origin: ["https://ubclaunchpad.com", "http://localhost:3000", "http://localhost:8000"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    allowHeaders: [
+      "Origin",
+      "Content-Type", 
+      "Accept",
+      "Authorization",
+      "X-Requested-With",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers"
+    ],
     exposeHeaders: ["*"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+    maxAge: 86400,
   })
 );
+
+app.use(apiLogger);
 
 app
   .route("/colony/github", githubRouter)
