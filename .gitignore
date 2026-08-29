@@ -14,3 +14,4 @@ test.csv:Zone.Identifier
 bun
 
 # *.pemdist/
+dist/
