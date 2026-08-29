@@ -6,7 +6,10 @@ import type {
   GHAuthManagerInterface,
   GithubOrganizationManagerInterface,
 } from "./types";
-import { GitHubAPIError } from "./errorTypes";
+import {
+  GitHubAPIError,
+  GitHubValidationError,
+} from "./errorTypes";
 import type { GHEventManagerInterface } from "./events/types";
 import { GithubEventManager } from "./events/githubEventManager";
 
@@ -55,8 +58,23 @@ export class GithubOrganizationManager
     return this.githubEventManager;
   }
 
+  private wrapError(e: unknown): GitHubAPIError {
+    const status = (e as { status?: number })?.status;
+    const message = e instanceof Error ? e.message : String(e);
+    return new GitHubAPIError(message, status, status ? String(status) : undefined);
+  }
 
-
+  private async isOrganizationMember(ghUsername: string): Promise<boolean> {
+    const resp = await this.octoClient.request(
+      "GET /orgs/{org}/memberships/{username}",
+      {
+        org: this.orgName,
+        username: ghUsername,
+        headers: this.defaultHeaders,
+      }
+    );
+    return resp.data?.state === "active";
+  }
 
   public async initiateDeviceFlow() {
     const resp = await fetch(
@@ -90,12 +108,23 @@ export class GithubOrganizationManager
       const data = resp.data;
       return data.state === "active" ? true : false;
     } catch (e) {
-      throw new GitHubAPIError((e as Error).message);
+      const status = (e as { status?: number })?.status;
+      if (status === 404) {
+        return false;
+      }
+      throw this.wrapError(e);
     }
   }
 
   public async inviteToOrganization(ghUsername: string) {
     try {
+      // Bail out cleanly if the user is already an active member.
+      if (await this.isOrganizationMember(ghUsername)) {
+        throw new GitHubValidationError(
+          `User '${ghUsername}' is already a member of the ${this.orgName} organization`
+        );
+      }
+
       // First, get the user ID from the username
       const userResponse = await this.octoClient.request("GET /users/{username}", {
         username: ghUsername,
@@ -103,7 +132,7 @@ export class GithubOrganizationManager
       });
 
       if (userResponse.status !== 200) {
-        throw new GitHubAPIError(`User ${ghUsername} not found`);
+        throw new GitHubAPIError(`User ${ghUsername} not found`, 404, "user_not_found");
       }
 
       const userId = userResponse.data.id;
@@ -115,7 +144,10 @@ export class GithubOrganizationManager
         headers: this.defaultHeaders,
       });
     } catch (e) {
-      throw new GitHubAPIError((e as Error).message);
+      if (e instanceof GitHubValidationError) {
+        throw e;
+      }
+      throw this.wrapError(e);
     }
   }
 
