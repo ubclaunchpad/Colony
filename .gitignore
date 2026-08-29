@@ -13,4 +13,4 @@ test.csv:Zone.Identifier
 .env.backup
 bun
 
-# *.pem
+# *.pemdist/

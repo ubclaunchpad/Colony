@@ -145,7 +145,6 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildScheduledEvents,
-    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Message, Partials.Channel],
