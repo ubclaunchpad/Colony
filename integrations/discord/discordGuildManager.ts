@@ -46,26 +46,29 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
     Logger.log("warn", `Stopped Discord Bot  <<<<<`);
   }
 
-  async addRolesToUser(
-    discordUsername: string,
-    roles: string[],
-    type: "ID" | "Label"
-  ): Promise<void> {
-    const memberQuery = await this.guild.members.fetch({
-      query: discordUsername,
-      limit: 1,
+  // Guild member search is a prefix match on username *and* nickname, so the
+  // first hit for "alex" may be "alex_dev". Only accept an exact username match.
+  private async findMemberByUsername(discordUsername: string): Promise<GuildMember> {
+    const wanted = discordUsername.trim().toLowerCase();
+    const matches = await this.guild.members.fetch({
+      query: wanted,
+      limit: 100,
     });
-    if (!memberQuery || memberQuery.size === 0) {
-      throw new Error(
-        `User ${discordUsername} not found in the Discord server`
-      );
-    }
-    const member = memberQuery.values().next().value;
+    const member = matches.find((m) => m.user.username.toLowerCase() === wanted);
     if (!member) {
       throw new Error(
         `User ${discordUsername} not found in the Discord server`
       );
     }
+    return member;
+  }
+
+  async addRolesToUser(
+    discordUsername: string,
+    roles: string[],
+    type: "ID" | "Label"
+  ): Promise<void> {
+    const member = await this.findMemberByUsername(discordUsername);
     const serverRoles = Array.from((await this.guild.roles.fetch()).values());
     const promises: Promise<GuildMember>[] = [];
 
@@ -84,21 +87,7 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
     roles: string[],
     type: "ID" | "Label"
   ): Promise<void> {
-    const memberQuery = await this.guild.members.fetch({
-      query: discordUsername,
-      limit: 1,
-    });
-    if (!memberQuery || memberQuery.size === 0) {
-      throw new Error(
-        `User ${discordUsername} not found in the Discord server`
-      );
-    }
-    const member = memberQuery.values().next().value;
-    if (!member) {
-      throw new Error(
-        `User ${discordUsername} not found in the Discord server`
-      );
-    }
+    const member = await this.findMemberByUsername(discordUsername);
     const serverRoles = Array.from((await this.guild.roles.fetch()).values());
     const promises: Promise<GuildMember>[] = [];
 
@@ -112,21 +101,7 @@ export class DiscordGuildManager implements DiscordGuildManagerInterface {
   }
 
   async getUserRoles(discordUsername: any): Promise<string[]> {
-    const memberQuery = await this.guild.members.fetch({
-      query: discordUsername,
-      limit: 1,
-    });
-    if (!memberQuery || memberQuery.size === 0) {
-      throw new Error(
-        `User ${discordUsername} not found in the Discord server`
-      );
-    }
-    const member = memberQuery.values().next().value;
-    if (!member) {
-      throw new Error(
-        `User ${discordUsername} not found in the Discord server`
-      );
-    }
+    const member = await this.findMemberByUsername(discordUsername);
 
     return Array.from(member.roles.cache.values()).map((r) => r.name);
   }
