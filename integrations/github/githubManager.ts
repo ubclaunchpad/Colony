@@ -64,18 +64,6 @@ export class GithubOrganizationManager
     return new GitHubAPIError(message, status, status ? String(status) : undefined);
   }
 
-  private async isOrganizationMember(ghUsername: string): Promise<boolean> {
-    const resp = await this.octoClient.request(
-      "GET /orgs/{org}/memberships/{username}",
-      {
-        org: this.orgName,
-        username: ghUsername,
-        headers: this.defaultHeaders,
-      }
-    );
-    return resp.data?.state === "active";
-  }
-
   public async initiateDeviceFlow() {
     const resp = await fetch(
       `https://github.com/login/device/code?client_id=${this.orgClientId}&scope=user`,
@@ -119,7 +107,7 @@ export class GithubOrganizationManager
   public async inviteToOrganization(ghUsername: string) {
     try {
       // Bail out cleanly if the user is already an active member.
-      if (await this.isOrganizationMember(ghUsername)) {
+      if (await this.isOrganizaionMember(ghUsername)) {
         throw new GitHubValidationError(
           `User '${ghUsername}' is already a member of the ${this.orgName} organization`
         );
